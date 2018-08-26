@@ -26,17 +26,27 @@ int getArgumentsFromCommand (char* command)
 	while (subString != NULL) {
 		printf("%s\n",subString);
 		subString = strtok(NULL,DELIMITER);
-
 	}
 	return 0;
 }
+
 /*-------------------------------------------------MAIN--------------------------------------------------*/
 int main () 
 {	
-	char* teste = malloc(sizeof(char*));
-	strcpy(teste,"oi tudo bem");
-	printf("%s\n",teste);
-	getArgumentsFromCommand(teste);
-	free(teste);
+	char userInput [BUFFER];
+	printf("\n/*******************************************************/\n");
+	printf("-------- SHELL DESENVOLVIDO POR FABIANA FERREIRA --------\n");
+	printf("/*******************************************************/\n");
+	print("\n");
+	printf("Por favor, digite o comando a ser executado.\n");
+	while (1) {
+		fgets(userInput, BUFFER, stdin);
+		if (strlen(userInput) > 0)
+			break;
+	}
+	printf("Input: %s\n", userInput);
+
+	/*Trata e faz o parser da string recebida na linha de comando*/
+	getArgumentsFromCommand(userInput);
 	return 0;
 }
