@@ -13,6 +13,7 @@
 #define EOS	"\0"
 #define BUFFER	100
 #define DELIMITER " "
+#define EXIT_COMMAND "exit"
 
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*);
@@ -34,19 +35,31 @@ int getArgumentsFromCommand (char* command)
 int main () 
 {	
 	char userInput [BUFFER];
-	printf("\n/*******************************************************/\n");
-	printf("-------- SHELL DESENVOLVIDO POR FABIANA FERREIRA --------\n");
-	printf("/*******************************************************/\n");
-	print("\n");
-	printf("Por favor, digite o comando a ser executado.\n");
-	while (1) {
-		fgets(userInput, BUFFER, stdin);
-		if (strlen(userInput) > 0)
-			break;
+	unsigned exit = 0;
+	printf("\n/******************************************************************************/\n");
+	printf("/*------ FABITS SHELL: UM SHELL SIMPLIFICADO PARA SISTEMAS OPERACIONAIS ------*/\n");
+	printf("/******************************************************************************/\n");
+	printf("\n");
+	printf("\n");
+	printf("$fabitsShell ");
+	while (!exit) {
+		while (1) {
+			fgets(userInput, BUFFER, stdin);
+			if (strlen(userInput) > 0 && !strcmp(userInput,EXIT_COMMAND)) 
+			{
+				printf("Input: %s\n", userInput);
+				/*Trata e faz o parser da string recebida na linha de comando*/
+				getArgumentsFromCommand(userInput);
+				break;
+			}
+			else {
+				exit = 1;
+				printf("Saindo do fabitsShell\n");
+				break;
+			}
+		}
 	}
-	printf("Input: %s\n", userInput);
 
-	/*Trata e faz o parser da string recebida na linha de comando*/
-	getArgumentsFromCommand(userInput);
+	
 	return 0;
 }
