@@ -26,18 +26,18 @@
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*, char**, char**);
 void signal_handler(int);
+void freeArray(char**);
+
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
 int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput) 
 {
 	char* subString;
-	unsigned counter = 1;
+	unsigned counter = 0;
 	unsigned flagOutput = 0;
 	subString = strtok(command, DELIMITER);
-	arguments[counter - 1] = subString; 
 	while (subString != NULL) 
 	{
-		subString = strtok(NULL,DELIMITER);
 		if (strcmp(subString, ">") == 0) 
 			flagOutput = 1;
 		else 
@@ -46,17 +46,23 @@ int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 			if (flagOutput){
 				/*Mudando o valor da variavel pathOutput e atribuindo o valor na posicao de memoria da subString*/
 				*pathOutput = subString;
-				break;
 			}
 			else 
 			{
-				arguments[counter] = subString;
+				arguments[counter] = (char*)malloc((strlen(subString) + 1)*sizeof(char*));
+				if (arguments[counter] != NULL)
+					strcpy(arguments[counter],subString);
+				else
+					return -1;
 				counter++;
 			}
 		}
+		subString = strtok(NULL,DELIMITER);
 	}
 	/*NULL é adicionado no final para que a chamada ao exec funcione*/
 	arguments[counter + 1] = NULL;
+	if (!flagOutput)
+		*pathOutput = "";
 	return 0;
 }
 
@@ -71,13 +77,26 @@ void signal_handler(int sigNumber)
 	}
 }
 
+void freeArray(char** arguments) 
+{
+	unsigned i = 0;
+	while (arguments[i] != NULL) 
+	{
+		free(arguments[i]);
+		/*Para marcar os ponteiros que foram liberados da memoria, atribuimos NULL ao mesmo*/
+		arguments[i] = NULL;	
+		i++;
+	}
+}
+
 /*-------------------------------------------------MAIN--------------------------------------------------*/
 int main () 
 {	
+	FILE* stream;
 	char userInput [BUFFER];
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
-	char* outputPath = (char*)malloc(sizeof(char*));
+	char* pathOutput = (char*)malloc(sizeof(char*));
 	unsigned exit = 0;
 	printf(CYAN_COLOR);
 	printf("\n/******************************************************************************/\n");
@@ -102,9 +121,10 @@ int main ()
 			if (strcmp(userInput,EXIT_COMMAND) != 0) 
 			{
 			/*Trata e faz o parser da string recebida na linha de comando*/
-				getArgumentsFromCommand(userInput,arguments, &outputPath);
-				printf("Output: %s\n", outputPath);
-				char* commandPath = (char*)malloc(sizeof(char*));
+				unsigned k = 0;
+				getArgumentsFromCommand(userInput,arguments, &pathOutput);
+				
+				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
 				child_pid = fork();
@@ -112,16 +132,22 @@ int main ()
 				{
 				/*CHILD*/
 				/*Executa o comando pedido pelo usuario*/
-					//stream = fopen("/tmp/saida.out", "w");
-					//dup2(fileno(stream), fileno("stdout"));
+					if (strlen(pathOutput) != 0) 
+					{
+						printf("Caminho da saida foi configurado para %s\n", pathOutput);
+						stream = fopen(pathOutput, "w");
+						dup2(fileno(stream), fileno(stdout));
+					}
 					execv(commandPath, arguments);
+					if (strlen(pathOutput) != 0)
+						fclose(stream);
 				}
 				else 
 				{
 				/*PARENT*/
 					wait(NULL);						
 				}					
-				free(commandPath);
+			free(commandPath);
 			}
 			else 
 			{
@@ -129,7 +155,9 @@ int main ()
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}			
 		}
+		freeArray(arguments);
 	}	
-//	free(outputPath);
+	free(arguments);
+	
 	return 0;
 }
