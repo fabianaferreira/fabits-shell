@@ -21,7 +21,7 @@
 
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*, char**);
-
+void signal_handler(int);
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
 int getArgumentsFromCommand (char* command, char** arguments) 
@@ -40,9 +40,13 @@ int getArgumentsFromCommand (char* command, char** arguments)
 	return 0;
 }
 
+pid_t child_pid;
+
 void signal_handler(int sigNumber) {
-	if (sigNumber == SIGUSR1)
-		printf("recebi um sigterm\n");
+	if (sigNumber == SIGUSR1 && child_pid != getpid()) {	
+		printf("Recebi um sinal de SIGUSR1. Terminando processo criado.\n");
+		kill(child_pid, SIGUSR1);
+	}
 }
 
 /*-------------------------------------------------MAIN--------------------------------------------------*/
@@ -59,49 +63,38 @@ int main ()
 	printf("\n");
 	while (!exit) {
 		printf("$fabitsShell ");
-		while (1) {
-			if (fgets(userInput, BUFFER, stdin) != NULL) {
+		signal(SIGUSR1, signal_handler);
+		if (fgets(userInput, BUFFER, stdin) != NULL) {
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
-				unsigned inputLength = strlen(userInput);
-				if (inputLength > 0 && userInput[inputLength - 1] == '\n')
-					userInput[--inputLength] = '\0';
-
+			unsigned inputLength = strlen(userInput);
+			if (inputLength > 0 && userInput[inputLength - 1] == '\n')
+				userInput[--inputLength] = '\0';
 				/*Entrou com um comando que não é o exit*/
-				if (strcmp(userInput,EXIT_COMMAND) != 0) 
-				{
-				/*Trata e faz o parser da string recebida na linha de comando*/
-					getArgumentsFromCommand(userInput,arguments);
-					char* commandPath = (char*)malloc(sizeof(char*));
-					strcpy(commandPath, PATH);
-					strcat(commandPath,arguments[0]);
-					pid_t child_pid = fork();
-					if (child_pid == 0) {
-					/*Executa o comando pedido pelo usuario*/
-						//stream = fopen("/tmp/saida.out", "w");
-						//dup2(fileno(stream), fileno("stdout"));
-						execv(commandPath, arguments);
-						free(commandPath);
-						break;
-					}
-					else {
-						wait(NULL);
-						printf("Task is done\n");
-						break;
-					}
+			if (strcmp(userInput,EXIT_COMMAND) != 0) 
+			{
+			/*Trata e faz o parser da string recebida na linha de comando*/
+				getArgumentsFromCommand(userInput,arguments);
+				char* commandPath = (char*)malloc(sizeof(char*));
+				strcpy(commandPath, PATH);
+				strcat(commandPath,arguments[0]);
+				child_pid = fork();
+				if (child_pid == 0) {
+				/*CHILD*/
+				/*Executa o comando pedido pelo usuario*/
+					//stream = fopen("/tmp/saida.out", "w");
+					//dup2(fileno(stream), fileno("stdout"));
+					execv(commandPath, arguments);
 				}
 				else {
-					exit = 1;					
-					printf("Saindo do shell. Obrigada por testar!\n");
-					break;
-				}
-				/*Tratar sinal para kill no processo*/
-				if (signal(SIGUSR1, signal_handler) == SIG_ERR) {
-					printf("\nnao trato sigterm\n");
-				}
-				else 
-					printf("tratei sigterm\n");
-			
+				/*PARENT*/
+					wait(NULL);						
+				}					
+				free(commandPath);
 			}
+			else {
+				exit = 1;					
+				printf("Saindo do shell. Obrigada por testar!\n");
+			}			
 		}
 	}	
 	free(arguments);
