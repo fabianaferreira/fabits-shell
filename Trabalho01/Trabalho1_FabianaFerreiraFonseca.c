@@ -18,6 +18,10 @@
 #define DELIMITER " "
 #define EXIT_COMMAND "exit"
 #define PATH "/bin/"
+#define CYAN_COLOR	"\033[1;36m"
+#define GREEN_COLOR	"\033[1;32m"
+#define RESET_COLOR "\033[0m"
+
 
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*, char**);
@@ -30,7 +34,8 @@ int getArgumentsFromCommand (char* command, char** arguments)
 	unsigned counter = 1;
 	subString = strtok(command, DELIMITER);
 	arguments[counter - 1] = subString; 
-	while (subString != NULL) {
+	while (subString != NULL) 
+	{
 		subString = strtok(NULL,DELIMITER);
 		arguments[counter] = subString;
 		counter++;
@@ -42,8 +47,10 @@ int getArgumentsFromCommand (char* command, char** arguments)
 
 pid_t child_pid;
 
-void signal_handler(int sigNumber) {
-	if (sigNumber == SIGUSR1 && child_pid != getpid()) {	
+void signal_handler(int sigNumber) 
+{
+	if (sigNumber == SIGUSR1 && child_pid != getpid()) 
+	{	
 		printf("Recebi um sinal de SIGUSR1. Terminando processo criado.\n");
 		kill(child_pid, SIGUSR1);
 	}
@@ -56,15 +63,21 @@ int main ()
 	/*Alocando memoria para criar o array que armarezará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
 	unsigned exit = 0;
+	printf(CYAN_COLOR);
 	printf("\n/******************************************************************************/\n");
 	printf("/*------ FABITS SHELL: UM SHELL SIMPLIFICADO PARA SISTEMAS OPERACIONAIS ------*/\n");
 	printf("/******************************************************************************/\n");
+	printf(RESET_COLOR);
 	printf("\n");
 	printf("\n");
-	while (!exit) {
-		printf("$fabitsShell ");
+	while (!exit) 
+	{
+		printf(GREEN_COLOR);
+		printf("$fabitsShell: ");
+		printf(RESET_COLOR);
 		signal(SIGUSR1, signal_handler);
-		if (fgets(userInput, BUFFER, stdin) != NULL) {
+		if (fgets(userInput, BUFFER, stdin) != NULL) 
+		{
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			if (inputLength > 0 && userInput[inputLength - 1] == '\n')
@@ -78,20 +91,23 @@ int main ()
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
 				child_pid = fork();
-				if (child_pid == 0) {
+				if (child_pid == 0) 
+				{
 				/*CHILD*/
 				/*Executa o comando pedido pelo usuario*/
 					//stream = fopen("/tmp/saida.out", "w");
 					//dup2(fileno(stream), fileno("stdout"));
 					execv(commandPath, arguments);
 				}
-				else {
+				else 
+				{
 				/*PARENT*/
 					wait(NULL);						
 				}					
 				free(commandPath);
 			}
-			else {
+			else 
+			{
 				exit = 1;					
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}			
