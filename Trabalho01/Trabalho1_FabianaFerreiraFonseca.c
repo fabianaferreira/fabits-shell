@@ -24,21 +24,36 @@
 
 
 /*Declaracao da funcao para Tratamento de strings*/
-int getArgumentsFromCommand(char*, char**);
+int getArgumentsFromCommand(char*, char**, char**);
 void signal_handler(int);
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
-int getArgumentsFromCommand (char* command, char** arguments) 
+int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput) 
 {
 	char* subString;
 	unsigned counter = 1;
+	unsigned flagOutput = 0;
 	subString = strtok(command, DELIMITER);
 	arguments[counter - 1] = subString; 
 	while (subString != NULL) 
 	{
 		subString = strtok(NULL,DELIMITER);
-		arguments[counter] = subString;
-		counter++;
+		if (strcmp(subString, ">") == 0) 
+			flagOutput = 1;
+		else 
+		{
+			/*Se tiver a flag, a string vai receber o resultado do parser atual da strtok*/
+			if (flagOutput){
+				/*Mudando o valor da variavel pathOutput e atribuindo o valor na posicao de memoria da subString*/
+				*pathOutput = subString;
+				break;
+			}
+			else 
+			{
+				arguments[counter] = subString;
+				counter++;
+			}
+		}
 	}
 	/*NULL é adicionado no final para que a chamada ao exec funcione*/
 	arguments[counter + 1] = NULL;
@@ -60,8 +75,9 @@ void signal_handler(int sigNumber)
 int main () 
 {	
 	char userInput [BUFFER];
-	/*Alocando memoria para criar o array que armarezará os argumentos*/
+	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
+	char* outputPath = (char*)malloc(sizeof(char*));
 	unsigned exit = 0;
 	printf(CYAN_COLOR);
 	printf("\n/******************************************************************************/\n");
@@ -86,7 +102,8 @@ int main ()
 			if (strcmp(userInput,EXIT_COMMAND) != 0) 
 			{
 			/*Trata e faz o parser da string recebida na linha de comando*/
-				getArgumentsFromCommand(userInput,arguments);
+				getArgumentsFromCommand(userInput,arguments, &outputPath);
+				printf("Output: %s\n", outputPath);
 				char* commandPath = (char*)malloc(sizeof(char*));
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
@@ -113,6 +130,6 @@ int main ()
 			}			
 		}
 	}	
-	free(arguments);
+//	free(outputPath);
 	return 0;
 }
