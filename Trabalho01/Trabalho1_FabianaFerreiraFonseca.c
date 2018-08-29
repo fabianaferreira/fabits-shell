@@ -121,9 +121,7 @@ int main ()
 			if (strcmp(userInput,EXIT_COMMAND) != 0) 
 			{
 			/*Trata e faz o parser da string recebida na linha de comando*/
-				unsigned k = 0;
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
-				
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
