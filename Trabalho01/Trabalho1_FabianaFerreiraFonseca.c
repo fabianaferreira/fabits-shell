@@ -66,8 +66,11 @@ int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 	return 0;
 }
 
+/*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
 
+/*Funcao que funciona como listener do sinal SIGUSR1, que matará 
+o processo que está rodando no meu shell*/
 void signal_handler(int sigNumber) 
 {
 	if (sigNumber == SIGUSR1 && child_pid != getpid()) 
@@ -77,6 +80,8 @@ void signal_handler(int sigNumber)
 	}
 }
 
+/*Funcao que irá liberar o espaço de memória utilizado com o malloc 
+do array que armazena os argumentos que são passados para a execv*/
 void freeArray(char** arguments) 
 {
 	unsigned i = 0;
@@ -117,11 +122,14 @@ int main ()
 			unsigned inputLength = strlen(userInput);
 			if (inputLength > 0 && userInput[inputLength - 1] == '\n')
 				userInput[--inputLength] = '\0';
-				/*Entrou com um comando que não é o exit*/
+			
+			/*Entrou com um comando que não é o exit*/
 			if (strcmp(userInput,EXIT_COMMAND) != 0) 
 			{
-			/*Trata e faz o parser da string recebida na linha de comando*/
+				/*Trata e faz o parser da string recebida na linha de comando*/
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
+				
+				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
@@ -129,14 +137,17 @@ int main ()
 				if (child_pid == 0) 
 				{
 				/*CHILD*/
-				/*Executa o comando pedido pelo usuario*/
+					/*Testa o caso em que o usuario não quer printar na tela a saída do comando
+					  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
 					if (strlen(pathOutput) != 0) 
 					{
 						printf("Caminho da saida foi configurado para %s\n", pathOutput);
 						stream = fopen(pathOutput, "w");
 						dup2(fileno(stream), fileno(stdout));
 					}
+					/*Executa o comando pedido pelo usuario*/
 					execv(commandPath, arguments);
+	
 					if (strlen(pathOutput) != 0)
 						fclose(stream);
 				}
@@ -153,8 +164,10 @@ int main ()
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}			
 		}
+		/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
 		freeArray(arguments);
-	}	
+	}
+	/*Liberado o espaço de memoria alocado pelo proprio array*/	
 	free(arguments);
 	
 	return 0;
