@@ -20,6 +20,7 @@
 #define PATH "/bin/"
 #define CYAN_COLOR	"\033[1;36m"
 #define GREEN_COLOR	"\033[1;32m"
+#define RED_COLOR	"\033[1;31m"
 #define RESET_COLOR "\033[0m"
 
 
@@ -157,12 +158,16 @@ int main ()
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2) 
 			{	
+				printf(RED_COLOR);
 				printf("Digite um comando válido\n");
+				printf(RESET_COLOR);
 				continue;
 			}
 			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagCd != 0) 
 			{				
+				printf(RED_COLOR);
 				printf("Comando não existente. Por favor, digite novamente.\n");
+				printf(RESET_COLOR);
 				continue;
 			}
 			
