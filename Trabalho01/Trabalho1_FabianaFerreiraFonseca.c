@@ -146,11 +146,13 @@ int main ()
 		{
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
-			
+			int flagCd = -1;
+		
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
 			strcpy(inputCopy,userInput);
 			strtok(inputCopy, DELIMITER);
+			flagCd = strcmp(inputCopy, "cd");
 	
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2) 
@@ -158,11 +160,12 @@ int main ()
 				printf("Digite um comando válido\n");
 				continue;
 			}
-			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL) 
+			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagCd != 0) 
 			{				
 				printf("Comando não existente. Por favor, digite novamente.\n");
 				continue;
 			}
+			
 
 			/*------Digitou um comando que existe na pasta /bin-----*/
 
@@ -170,12 +173,12 @@ int main ()
 			if (inputLength > 1 && userInput[inputLength - 1] == '\n') 
 				userInput[inputLength - 1] = '\0';					
 			
+			/*Trata e faz o parser da string recebida na linha de comando*/
+			getArgumentsFromCommand(userInput,arguments, &pathOutput);
+			
 			/*Entrou com um comando que não é o exit*/
-			if (strcmp(userInput,EXIT_COMMAND) != 0) 
-			{
-				/*Trata e faz o parser da string recebida na linha de comando*/
-				getArgumentsFromCommand(userInput,arguments, &pathOutput);
-				
+			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagCd != 0) 
+			{				
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
@@ -204,6 +207,10 @@ int main ()
 					wait(NULL);						
 				}					
 			free(commandPath);			
+			}
+			else if (flagCd == 0) 
+			{
+				chdir(arguments[1]);
 			}
 			else 
 			{
