@@ -13,15 +13,17 @@
 #include <unistd.h>
 #include <sys/wait.h>
 
-#define EOS	"\0"
-#define BUFFER	100
-#define DELIMITER " "
-#define EXIT_COMMAND "exit"
-#define PATH "/bin/"
-#define CYAN_COLOR	"\033[1;36m"
-#define GREEN_COLOR	"\033[1;32m"
-#define RED_COLOR	"\033[1;31m"
-#define RESET_COLOR "\033[0m"
+#define EOS				"\0"
+#define BUFFER			100
+#define DELIMITER 		" "
+#define EXIT_COMMAND 	"exit"
+#define MAN_COMMAND		"man fabits\n"
+#define PATH 			"/bin/"
+#define CYAN_COLOR		"\033[1;36m"
+#define GREEN_COLOR		"\033[1;32m"
+#define RED_COLOR		"\033[1;31m"
+#define MAGENTA_COLOR	"\033[1;35m"
+#define RESET_COLOR 	"\033[0m"
 
 
 /*Declaracao da funcao para Tratamento de strings*/
@@ -77,7 +79,7 @@ void signal_handler(int sigNumber)
 	if (sigNumber == SIGUSR1 && child_pid != getpid()) 
 	{	
 		printf("Recebi um sinal de SIGUSR1. Terminando processo criado.\n");
-		kill(child_pid, SIGUSR1);
+		kill(child_pid, SIGTERM);
 	}
 }
 
@@ -133,10 +135,16 @@ int main ()
 	printf(CYAN_COLOR);
 	printf("\n/******************************************************************************/\n");
 	printf("/*------ FABITS SHELL: UM SHELL SIMPLIFICADO PARA SISTEMAS OPERACIONAIS ------*/\n");
-	printf("/******************************************************************************/\n");
+	printf("/******************************************************************************/\n");	
 	printf(RESET_COLOR);
 	printf("\n");
 	printf("\n");
+	printf(MAGENTA_COLOR);
+	printf("Para maiores informações sobre como utilizá-lo, digite 'man fabits'\n");
+	printf(RESET_COLOR);
+	printf("\n");
+	printf("\n");
+	
 	while (!exit) 
 	{
 		printf(GREEN_COLOR);
@@ -148,13 +156,15 @@ int main ()
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
-		
+			int flagMan = -1;
+
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
 			strcpy(inputCopy,userInput);
 			strtok(inputCopy, DELIMITER);
 			flagCd = strcmp(inputCopy, "cd");
-	
+			flagMan = strcmp(userInput, MAN_COMMAND);
+			
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2) 
 			{	
@@ -163,7 +173,7 @@ int main ()
 				printf(RESET_COLOR);
 				continue;
 			}
-			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagCd != 0) 
+			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0) 
 			{				
 				printf(RED_COLOR);
 				printf("Comando não existente. Por favor, digite novamente.\n");
@@ -172,18 +182,19 @@ int main ()
 			}
 			
 
-			/*------Digitou um comando que existe na pasta /bin-----*/
+			/*------Digitou um comando que existe na pasta /bin ou é exit ou é man-----*/
 
 			/*Se nao caiu em nenhum dos casos anteriores, pega o input e tira o \n*/		
 			if (inputLength > 1 && userInput[inputLength - 1] == '\n') 
 				userInput[inputLength - 1] = '\0';					
 			
-			/*Trata e faz o parser da string recebida na linha de comando*/
-			getArgumentsFromCommand(userInput,arguments, &pathOutput);
+			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem exit*/
+			if (flagCd != 0 && flagMan != 0)
+				getArgumentsFromCommand(userInput,arguments, &pathOutput);
 			
 			/*Entrou com um comando que não é o exit*/
-			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagCd != 0) 
-			{				
+			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0) 
+			{
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
@@ -208,14 +219,25 @@ int main ()
 				}
 				else 
 				{
-				/*PARENT*/
-					wait(NULL);						
+					/*PARENT*/
+					/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
+					  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
+					waitpid(child_pid,NULL, WCONTINUED);						
 				}					
 			free(commandPath);			
 			}
 			else if (flagCd == 0) 
 			{
 				chdir(arguments[1]);
+			}
+			else if (flagMan == 0) 
+			{
+				printf(MAGENTA_COLOR);
+				printf("1. Comandos válidos são aqueles que estão na /bin ou 'exit' ou 'man fabits'\n");
+				printf("2. Para alterar o caminho de saída, basta digitar o comando, seguido de '> caminhoArquivo/nomeArquivo'\n");
+				printf("3. O comando cd funciona com a limitação de nomes de diretórios que não tenham espaço, por conta da lógica de parseamento de string\n");
+				printf("4. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado, encerra o processo filho que está executando\n");
+				printf(RESET_COLOR);
 			}
 			else 
 			{
