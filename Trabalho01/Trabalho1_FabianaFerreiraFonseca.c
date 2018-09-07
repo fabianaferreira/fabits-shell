@@ -16,6 +16,7 @@
 #define EOS				"\0"
 #define BUFFER			100
 #define DELIMITER 		" "
+#define CLEAR_COMMAND 	"clear\n"
 #define EXIT_COMMAND 	"exit"
 #define MAN_COMMAND		"man fabits\n"
 #define PATH 			"/bin/"
@@ -157,6 +158,7 @@ int main ()
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
 			int flagMan = -1;
+			int flagClear = -1;
 
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
@@ -164,6 +166,7 @@ int main ()
 			strtok(inputCopy, DELIMITER);
 			flagCd = strcmp(inputCopy, "cd");
 			flagMan = strcmp(userInput, MAN_COMMAND);
+			flagClear = strcmp(userInput, CLEAR_COMMAND);
 			
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2) 
@@ -173,7 +176,7 @@ int main ()
 				printf(RESET_COLOR);
 				continue;
 			}
-			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0) 
+			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0 && flagClear != 0) 
 			{				
 				printf(RED_COLOR);
 				printf("Comando não existente. Por favor, digite novamente.\n");
@@ -188,12 +191,12 @@ int main ()
 			if (inputLength > 1 && userInput[inputLength - 1] == '\n') 
 				userInput[inputLength - 1] = '\0';					
 			
-			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem exit*/
-			if (flagCd != 0 && flagMan != 0)
+			/*Trata e faz o parser da string recebida na linha de comando caso não seja man*/
+			if (flagMan != 0 && flagClear != 0)
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
 			
 			/*Entrou com um comando que não é o exit*/
-			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0) 
+			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0) 
 			{
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
@@ -233,7 +236,7 @@ int main ()
 			else if (flagMan == 0) 
 			{
 				printf(MAGENTA_COLOR);
-				printf("1. Comandos válidos são aqueles que estão na /bin ou 'exit' ou 'man fabits'.\n");
+				printf("1. Comandos válidos são aqueles que estão na /bin ou 'exit' ou 'man fabits'. ou 'clear'\n");
 				printf("2. Tratamentos de erro foram feitos para os casos acima,\n   assim como para argumentos vazios ou apenas um char.\n");
 				printf("3. Para alterar o caminho de saída, basta digitar o comando e argumentos opcionais,\n   seguido de '> caminhoArquivo/nomeArquivo'\n");
 				printf("4. Se especificado apenas o nome do arquivo, então será salvo no diretório atual\n");
@@ -241,6 +244,10 @@ int main ()
 				printf("6. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado,\n   encerra o processo filho que está executando\n");
 				printf("Por fim, os arquivos encontram-se no GitHub, através do seguinte link: github.com/FabianaFerreira/Sistemas-Operacionais\n");
 				printf(RESET_COLOR);
+			}
+			else if (flagClear == 0) 
+			{
+				system("clear");
 			}
 			else 
 			{
