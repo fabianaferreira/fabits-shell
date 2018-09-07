@@ -233,10 +233,12 @@ int main ()
 			else if (flagMan == 0) 
 			{
 				printf(MAGENTA_COLOR);
-				printf("1. Comandos válidos são aqueles que estão na /bin ou 'exit' ou 'man fabits'\n");
-				printf("2. Para alterar o caminho de saída, basta digitar o comando, seguido de '> caminhoArquivo/nomeArquivo'\n");
-				printf("3. O comando cd funciona com a limitação de nomes de diretórios que não tenham espaço, por conta da lógica de parseamento de string\n");
-				printf("4. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado, encerra o processo filho que está executando\n");
+				printf("1. Comandos válidos são aqueles que estão na /bin ou 'exit' ou 'man fabits'.\n");
+				printf("2. Tratamentos de erro foram feitos para os casos acima,\n   assim como para argumentos vazios ou apenas um char.\n");
+				printf("3. Para alterar o caminho de saída, basta digitar o comando e argumentos opcionais,\n   seguido de '> caminhoArquivo/nomeArquivo'\n");
+				printf("4. Se especificado apenas o nome do arquivo, então será salvo no diretório atual\n");
+				printf("5. O comando cd funciona com a limitação de nomes de diretórios que não tenham espaço,\n   por conta da lógica de parseamento de string\n");
+				printf("6. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado,\n   encerra o processo filho que está executando\n");
 				printf(RESET_COLOR);
 			}
 			else 
