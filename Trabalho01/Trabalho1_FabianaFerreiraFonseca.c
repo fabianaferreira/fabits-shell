@@ -239,6 +239,7 @@ int main ()
 				printf("4. Se especificado apenas o nome do arquivo, então será salvo no diretório atual\n");
 				printf("5. O comando cd funciona com a limitação de nomes de diretórios que não tenham espaço,\n   por conta da lógica de parseamento de string\n");
 				printf("6. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado,\n   encerra o processo filho que está executando\n");
+				printf("Por fim, os arquivos encontram-se no GitHub, através do seguinte link: github.com/FabianaFerreira/Sistemas-Operacionais\n");
 				printf(RESET_COLOR);
 			}
 			else 
