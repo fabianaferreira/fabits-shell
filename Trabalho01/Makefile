@@ -6,12 +6,13 @@ CC = gcc
 CFLAGS  = -Wall
 
 # the build target executable:
+OBJFILES = functions.o Trabalho1_FabianaFerreiraFonseca.o
 TARGET = Trabalho1_FabianaFerreiraFonseca
 
 all: $(TARGET)
 
-$(TARGET): $(TARGET).c
-	$(CC) $(CFLAGS) -o $(TARGET) $(TARGET).c
+$(TARGET): $(OBJFILES)
+	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES)
 
 clean:
-	$(RM) $(TARGET)
+	rm -f $(OBJFILES) $(TARGET) *~

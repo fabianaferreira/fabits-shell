@@ -1,0 +1,12 @@
+#define EOS				"\0"
+#define BUFFER			100
+#define DELIMITER 		" "
+#define CLEAR_COMMAND 	"clear\n"
+#define EXIT_COMMAND 	"exit"
+#define MAN_COMMAND		"man fabits\n"
+#define PATH 			"/bin/"
+#define CYAN_COLOR		"\033[1;36m"
+#define GREEN_COLOR		"\033[1;32m"
+#define RED_COLOR		"\033[1;31m"
+#define MAGENTA_COLOR	"\033[1;35m"
+#define RESET_COLOR 	"\033[0m"
