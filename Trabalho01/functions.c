@@ -1,3 +1,11 @@
+/*Universidade Federal do Rio de Janeiro
+  Departamento de Engenharia Eletrôncia e de Computação
+  Sistemas Operacionas - 2018.2
+  Aluna: Fabiana Ferreira Fonseca
+  DRE: 115037241*/
+
+/*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -85,4 +93,18 @@ void printUserGreeting ()
   printf(RESET_COLOR);
   printf("\n");
   printf("\n");
+}
+
+void typeCommand ()
+{
+	printf(RED_COLOR);
+	printf("Digite um comando válido\n");
+	printf(RESET_COLOR);
+}
+
+void printInvalidCommand ()
+{
+	printf(RED_COLOR);
+	printf("Comando não existente. Por favor, digite novamente.\n");
+	printf(RESET_COLOR);
 }

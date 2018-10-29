@@ -1,7 +1,16 @@
+/*Universidade Federal do Rio de Janeiro
+  Departamento de Engenharia Eletrôncia e de Computação
+  Sistemas Operacionas - 2018.2
+  Aluna: Fabiana Ferreira Fonseca
+  DRE: 115037241*/
+
+/*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
+
 #define EOS				"\0"
 #define BUFFER			100
 #define DELIMITER 		" "
 #define CLEAR_COMMAND 	"clear\n"
+#define SCREEN_COMMAND 	"screen\n"
 #define EXIT_COMMAND 	"exit"
 #define MAN_COMMAND		"man fabits\n"
 #define PATH 			"/bin/"

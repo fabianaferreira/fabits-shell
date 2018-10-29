@@ -4,7 +4,7 @@
   Aluna: Fabiana Ferreira Fonseca
   DRE: 115037241*/
 
-/*TRABALHO 1: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX*/
+/*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
 
 #include <stdio.h>
 #include <string.h>
@@ -63,8 +63,11 @@ int main ()
 		while(read(pipefd[0], commandList, sizeof(commandList)) != 0) {}
 	}
 
+	/*Comeca o programa que eh visto pelo usuario*/
+
 	printUserGreeting();
 
+	/*Loop enquanto nao sai do programa principal*/
 	while (!exit)
 	{
 		printf(GREEN_COLOR);
@@ -78,6 +81,7 @@ int main ()
 			int flagCd = -1;
 			int flagMan = -1;
 			int flagClear = -1;
+			int flagScreen = -1;
 
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
@@ -86,35 +90,33 @@ int main ()
 			flagCd = strcmp(inputCopy, "cd");
 			flagMan = strcmp(userInput, MAN_COMMAND);
 			flagClear = strcmp(userInput, CLEAR_COMMAND);
+			flagScreen = strcmp(userInput, SCREEN_COMMAND);
 
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2)
 			{
-				printf(RED_COLOR);
-				printf("Digite um comando válido\n");
-				printf(RESET_COLOR);
+				typeCommand();
 				continue;
 			}
-			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy,EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0 && flagClear != 0)
+			/*Testa todos os casos de comandos validos, se nao for, eh invalido e pede entrada de novo*/
+			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy, EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
 			{
-				printf(RED_COLOR);
-				printf("Comando não existente. Por favor, digite novamente.\n");
-				printf(RESET_COLOR);
+				printInvalidCommand();
 				continue;
 			}
 
-			/*------Digitou um comando que existe na pasta /bin ou é exit ou é man-----*/
+			/*Se nao caiu nos ifs acima, o comando eh valido. Existe na pasta /bin ou eh exit ou eh man*/
 
 			/*Se nao caiu em nenhum dos casos anteriores, pega o input e tira o \n*/
 			if (inputLength > 1 && userInput[inputLength - 1] == '\n')
 				userInput[inputLength - 1] = '\0';
 
-			/*Trata e faz o parser da string recebida na linha de comando caso não seja man*/
-			if (flagMan != 0 && flagClear != 0)
+			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem clear nem screen*/
+			if (flagMan != 0 && flagClear != 0 && flagScreen != 0)
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
 
 			/*Entrou com um comando que não é o exit*/
-			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0)
+			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
 			{
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
@@ -123,7 +125,7 @@ int main ()
 				child_pid = fork();
 				if (child_pid == 0)
 				{
-				/*CHILD*/
+					/*CHILD*/
 					/*Testa o caso em que o usuario não quer printar na tela a saída do comando
 					  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
 					if (strlen(pathOutput) != 0)
@@ -158,6 +160,11 @@ int main ()
 			else if (flagClear == 0)
 			{
 				system("clear");
+			}
+			else if (flagScreen == 0)
+			{
+				/*Sendo screen, preciso instanciar uma tela que ira ficar escutando por um comando vindo do pai*/
+				printf("eh screen \n");
 			}
 			else
 			{
