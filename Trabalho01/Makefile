@@ -1,13 +1,9 @@
 # the compiler
 CC = gcc
-
-# compiler flags:
-#  -Wall turns on most, but not all, compiler warnings
 CFLAGS  = -Wall
 
-# the build target executable:
 OBJFILES = functions.o Trabalho1_FabianaFerreiraFonseca.o
-TARGET = Trabalho1_FabianaFerreiraFonseca
+TARGET = Trabalho1_FabianaFerreiraFonseca.exe
 
 all: $(TARGET)
 
