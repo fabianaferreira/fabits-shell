@@ -1,6 +1,6 @@
 /*Universidade Federal do Rio de Janeiro
   Departamento de Engenharia Eletrôncia e de Computação
-  Sistemas Operacionas - 2018.2
+  Sistemas Operacionais - 2018.2
   Aluna: Fabiana Ferreira Fonseca
   DRE: 115037241*/
 
@@ -14,9 +14,27 @@
 #include <sys/wait.h>
 #include "functions.h"
 #include "consts.h"
+// #include "classes.cpp"
+
+#include <iostream>
+using namespace std;
 
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
+pid_t currentScreen_pid;
+
+class Screen {
+	pid_t pid;
+    bool active;
+  public:
+    void set_values (pid_t, bool);  
+    pid_t getPid() {return pid;}  
+};
+
+void Screen::set_values (pid_t x, bool y) {
+  pid = x;
+  active = y;
+}
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
 o processo que está rodando no meu shell*/
@@ -64,7 +82,6 @@ int main ()
 	}
 
 	/*Comeca o programa que eh visto pelo usuario*/
-
 	printUserGreeting();
 
 	/*Loop enquanto nao sai do programa principal*/
@@ -72,6 +89,7 @@ int main ()
 	{
 		printf(GREEN_COLOR);
 		printf("$fabitsShell: ");
+
 		printf(RESET_COLOR);
 		signal(SIGUSR1, signal_handler);
 		if (fgets(userInput, BUFFER, stdin) != NULL)
@@ -105,7 +123,7 @@ int main ()
 				continue;
 			}
 
-			/*Se nao caiu nos ifs acima, o comando eh valido. Existe na pasta /bin ou eh exit ou eh man*/
+			/*Se nao caiu nos ifs acima, o comando eh valido. Existe na pasta /bin ou eh exit ou eh man ou eh screen*/
 
 			/*Se nao caiu em nenhum dos casos anteriores, pega o input e tira o \n*/
 			if (inputLength > 1 && userInput[inputLength - 1] == '\n')
@@ -149,25 +167,41 @@ int main ()
 				}
 			free(commandPath);
 			}
-			else if (flagCd == 0)
-			{
+			else if (flagCd == 0)			
 				chdir(arguments[1]);
-			}
+
 			else if (flagMan == 0)
-			{
 				printUserGuide();
-			}
-			else if (flagClear == 0)
-			{
+			
+			else if (flagClear == 0)		
 				system("clear");
-			}
+
 			else if (flagScreen == 0)
 			{
-				/*Sendo screen, preciso instanciar uma tela que ira ficar escutando por um comando vindo do pai*/
-				printf("eh screen \n");
+				currentScreen_pid = fork();				
+				// currentScreen_pid = fork();
+				if (currentScreen_pid == 0) 					
+				{
+					/*Eh o filho*/
+					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
+					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
+				}
+				else
+				{
+					Screen screen;
+  					screen.set_values (currentScreen_pid,true);
+  					cout << "pid do filho: \n" << screen.getPid();
+  					kill(currentScreen_pid, SIGTERM);
+					/*Eh o pai*/
+					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o 
+					pid da screen atual para poder dar exit quando for necessario*/					
+				}
+				// printf("eh screen \n");
 			}
 			else
 			{
+				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
+				/*Vai ter uma lista de array, preciso remover o filho que terminamos de executar*/
 				exit = 1;
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}
@@ -175,7 +209,6 @@ int main ()
 		/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
 		freeArray(arguments);
 	}
-
 	/*Liberado o espaço de memoria alocado pelo proprio array*/
 	free(arguments);
 	return 0;

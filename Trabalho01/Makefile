@@ -1,5 +1,5 @@
 # the compiler
-CC = gcc
+CC = g++
 CFLAGS  = -Wall
 
 OBJFILES = functions.o Trabalho1_FabianaFerreiraFonseca.o

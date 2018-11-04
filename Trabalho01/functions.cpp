@@ -1,6 +1,6 @@
 /*Universidade Federal do Rio de Janeiro
   Departamento de Engenharia Eletrôncia e de Computação
-  Sistemas Operacionas - 2018.2
+  Sistemas Operacionais - 2018.2
   Aluna: Fabiana Ferreira Fonseca
   DRE: 115037241*/
 
