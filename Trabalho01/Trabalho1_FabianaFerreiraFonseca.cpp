@@ -22,7 +22,7 @@ using namespace std;
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
 pid_t currentScreen_pid;
-
+Screen * currentScreen;
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
 o processo que está rodando no meu shell*/
@@ -41,6 +41,11 @@ int main ()
 	char commandList[BUFFER*20];
 	char userInput [BUFFER];
 	char inputCopy [BUFFER];
+	int p, f;
+  int rw_setup[2];
+  char message[BUFFER];
+  p = pipe(rw_setup);
+
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
 	char* pathOutput = (char*)malloc(sizeof(char*));
@@ -77,6 +82,7 @@ int main ()
 	{
 		printf(GREEN_COLOR);
 		printf("$fabitsShell: ");
+		// cout << "Pid atual 1 : " << getpid() << endl;
 
 		printf(RESET_COLOR);
 		signal(SIGUSR1, signal_handler);
@@ -123,6 +129,7 @@ int main ()
 			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
 
+
 			/*Entrou com um comando que não é o exit*/
 			if (flagExit == 0)
 			{
@@ -143,28 +150,25 @@ int main ()
 			else if (flagScreen == 0)
 			{
 				currentScreen_pid = fork();
-				if (currentScreen_pid == 0)
-				{
-					// cout << "Pid do filho: " << getpid() << endl;
-					// cout << "teste filho" << endl;
-					/*Eh o filho*/
-					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
-					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
-
-				}
-				else
+				if (currentScreen_pid > 0)
 				{
 					cout << "Pid do pai : " << getpid() << endl;
-					Screen screen(currentScreen_pid,true);
-					cout << "Pid do filho pela classe : " << screen.getPid() << endl;
-					// write(rw_setup[1], "Hi from Parent", 15);
-					// screen.set_values (currentScreen_pid,true);
-					// kill(currentScreen_pid, SIGTERM);
+					currentScreen = new Screen(currentScreen_pid,true);
 					/*Eh o pai*/
 					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o
 					pid da screen atual para poder dar exit quando for necessario*/
 				}
-				// printf("eh screen \n");
+				else if (currentScreen_pid == 0)
+				{
+					/*Eh o filho*/
+					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
+					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
+					while (true)
+					{
+						read(rw_setup[0], message, 15);
+        		cout << message << endl;
+					}
+				}
 			}
 			else
 			{
@@ -172,32 +176,40 @@ int main ()
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
-				child_pid = fork();
-				if (child_pid == 0)
+				if (currentScreen->getStatus())
 				{
-					/*CHILD*/
-					/*Testa o caso em que o usuario não quer printar na tela a saída do comando
-					  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-					if (strlen(pathOutput) != 0)
-					{
-						printf("Caminho da saida foi configurado para %s\n", pathOutput);
-						stream = fopen(pathOutput, "w");
-						dup2(fileno(stream), fileno(stdout));
-					}
-					/*Executa o comando pedido pelo usuario*/
-					execv(commandPath, arguments);
-
-					if (strlen(pathOutput) != 0)
-						fclose(stream);
+					cout << "enviando mensagem para o filho" << endl;
+					write(rw_setup[1], commandPath, 15);
 				}
 				else
 				{
-					/*PARENT*/
-					/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
-					  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
-					waitpid(child_pid, NULL, WCONTINUED);
+					child_pid = fork();
+					if (child_pid == 0)
+					{
+						/*CHILD*/
+						/*Testa o caso em que o usuario não quer printar na tela a saída do comando
+						  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
+						if (strlen(pathOutput) != 0)
+						{
+							printf("Caminho da saida foi configurado para %s\n", pathOutput);
+							stream = fopen(pathOutput, "w");
+							dup2(fileno(stream), fileno(stdout));
+						}
+						/*Executa o comando pedido pelo usuario*/
+						execv(commandPath, arguments);
+
+						if (strlen(pathOutput) != 0)
+							fclose(stream);
+					}
+					else
+					{
+						/*PARENT*/
+						/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
+						  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
+						waitpid(child_pid, NULL, WCONTINUED);
+					}
+					free(commandPath);
 				}
-				free(commandPath);
 			}
 
 		/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
@@ -206,5 +218,6 @@ int main ()
 	}
 	/*Liberado o espaço de memoria alocado pelo proprio array*/
 	free(arguments);
+	delete currentScreen;
 	return 0;
 }
