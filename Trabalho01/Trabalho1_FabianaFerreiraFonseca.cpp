@@ -14,7 +14,7 @@
 #include <sys/wait.h>
 #include "functions.h"
 #include "consts.h"
-// #include "classes.cpp"
+#include "screen.h"
 
 #include <iostream>
 using namespace std;
@@ -23,18 +23,6 @@ using namespace std;
 pid_t child_pid;
 pid_t currentScreen_pid;
 
-class Screen {
-	pid_t pid;
-    bool active;
-  public:
-    void set_values (pid_t, bool);  
-    pid_t getPid() {return pid;}  
-};
-
-void Screen::set_values (pid_t x, bool y) {
-  pid = x;
-  active = y;
-}
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
 o processo que está rodando no meu shell*/
@@ -100,6 +88,7 @@ int main ()
 			int flagMan = -1;
 			int flagClear = -1;
 			int flagScreen = -1;
+			int flagExit = -1;
 
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
@@ -109,6 +98,7 @@ int main ()
 			flagMan = strcmp(userInput, MAN_COMMAND);
 			flagClear = strcmp(userInput, CLEAR_COMMAND);
 			flagScreen = strcmp(userInput, SCREEN_COMMAND);
+			flagExit = strcmp(userInput, EXIT_COMMAND);
 
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2)
@@ -117,7 +107,7 @@ int main ()
 				continue;
 			}
 			/*Testa todos os casos de comandos validos, se nao for, eh invalido e pede entrada de novo*/
-			if (strstr(commandList, inputCopy) == NULL && strstr(inputCopy, EXIT_COMMAND) == NULL && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
+			if (strstr(commandList, inputCopy) == NULL && flagExit != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
 			{
 				printInvalidCommand();
 				continue;
@@ -130,11 +120,53 @@ int main ()
 				userInput[inputLength - 1] = '\0';
 
 			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem clear nem screen*/
-			if (flagMan != 0 && flagClear != 0 && flagScreen != 0)
+			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
 				getArgumentsFromCommand(userInput,arguments, &pathOutput);
 
 			/*Entrou com um comando que não é o exit*/
-			if (strcmp(userInput,EXIT_COMMAND) != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
+			if (flagExit == 0)
+			{
+				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
+				/*Vai ter uma lista de array, preciso remover o filho que terminamos de executar*/
+				exit = 1;
+				printf("Saindo do shell. Obrigada por testar!\n");
+			}
+			else if (flagCd == 0)
+				chdir(arguments[1]);
+
+			else if (flagMan == 0)
+				printUserGuide();
+
+			else if (flagClear == 0)
+				system("clear");
+
+			else if (flagScreen == 0)
+			{
+				currentScreen_pid = fork();
+				if (currentScreen_pid == 0)
+				{
+					// cout << "Pid do filho: " << getpid() << endl;
+					// cout << "teste filho" << endl;
+					/*Eh o filho*/
+					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
+					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
+
+				}
+				else
+				{
+					cout << "Pid do pai : " << getpid() << endl;
+					Screen screen(currentScreen_pid,true);
+					cout << "Pid do filho pela classe : " << screen.getPid() << endl;
+					// write(rw_setup[1], "Hi from Parent", 15);
+					// screen.set_values (currentScreen_pid,true);
+					// kill(currentScreen_pid, SIGTERM);
+					/*Eh o pai*/
+					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o
+					pid da screen atual para poder dar exit quando for necessario*/
+				}
+				// printf("eh screen \n");
+			}
+			else
 			{
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
@@ -163,51 +195,14 @@ int main ()
 					/*PARENT*/
 					/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
 					  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
-					waitpid(child_pid,NULL, WCONTINUED);
+					waitpid(child_pid, NULL, WCONTINUED);
 				}
-			free(commandPath);
+				free(commandPath);
 			}
-			else if (flagCd == 0)			
-				chdir(arguments[1]);
 
-			else if (flagMan == 0)
-				printUserGuide();
-			
-			else if (flagClear == 0)		
-				system("clear");
-
-			else if (flagScreen == 0)
-			{
-				currentScreen_pid = fork();				
-				// currentScreen_pid = fork();
-				if (currentScreen_pid == 0) 					
-				{
-					/*Eh o filho*/
-					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
-					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
-				}
-				else
-				{
-					Screen screen;
-  					screen.set_values (currentScreen_pid,true);
-  					cout << "pid do filho: \n" << screen.getPid();
-  					kill(currentScreen_pid, SIGTERM);
-					/*Eh o pai*/
-					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o 
-					pid da screen atual para poder dar exit quando for necessario*/					
-				}
-				// printf("eh screen \n");
-			}
-			else
-			{
-				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
-				/*Vai ter uma lista de array, preciso remover o filho que terminamos de executar*/
-				exit = 1;
-				printf("Saindo do shell. Obrigada por testar!\n");
-			}
-		}
 		/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
 		freeArray(arguments);
+		}
 	}
 	/*Liberado o espaço de memoria alocado pelo proprio array*/
 	free(arguments);

@@ -11,7 +11,7 @@
 #define DELIMITER 		" "
 #define CLEAR_COMMAND 	"clear\n"
 #define SCREEN_COMMAND 	"screen\n"
-#define EXIT_COMMAND 	"exit"
+#define EXIT_COMMAND 	"exit\n"
 #define MAN_COMMAND		"man fabits\n"
 #define PATH 			"/bin/"
 #define CYAN_COLOR		"\033[1;36m"
