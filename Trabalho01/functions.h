@@ -6,6 +6,8 @@
 
 /*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
 
+#include <vector>
+
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*, char**, char**);
 
@@ -18,3 +20,9 @@ void printUserGreeting ();
 void typeCommand ();
 
 void printInvalidCommand ();
+
+Screen getActiveScreen (std::vector<Screen>);
+
+void listScreens (std::vector<Screen>);
+
+void deactivateScreens (std::vector<Screen>*);

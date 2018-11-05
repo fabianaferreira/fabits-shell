@@ -2,7 +2,7 @@
 CC = g++
 CFLAGS  = -Wall
 
-OBJFILES = functions.o screen.o Trabalho1_FabianaFerreiraFonseca.o
+OBJFILES = screen.o functions.o Trabalho1_FabianaFerreiraFonseca.o
 TARGET = Trabalho1_FabianaFerreiraFonseca.exe
 
 all: $(TARGET)

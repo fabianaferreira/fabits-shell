@@ -12,9 +12,10 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <vector>
+#include "screen.h"
 #include "functions.h"
 #include "consts.h"
-#include "screen.h"
 
 #include <iostream>
 using namespace std;
@@ -22,6 +23,7 @@ using namespace std;
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
 pid_t currentScreen_pid;
+vector <Screen> activeScreens;
 Screen * currentScreen;
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
@@ -81,7 +83,7 @@ int main ()
 	while (!exit)
 	{
 		printf(GREEN_COLOR);
-		printf("$fabitsShell: ");
+		cout << "$fabitsShell: ";
 		// cout << "Pid atual 1 : " << getpid() << endl;
 
 		printf(RESET_COLOR);
@@ -150,10 +152,15 @@ int main ()
 			else if (flagScreen == 0)
 			{
 				currentScreen_pid = fork();
+				deactivateScreens(&activeScreens);
+				currentScreen = new Screen(currentScreen_pid,true);
+				activeScreens.push_back(*currentScreen);
+
 				if (currentScreen_pid > 0)
 				{
-					cout << "Pid do pai : " << getpid() << endl;
-					currentScreen = new Screen(currentScreen_pid,true);
+					// cout << "Pid do pai : " << getpid() << endl;
+					// cout << "Pid do filho : " << currentScreen_pid << endl;
+					// currentScreen = new Screen(currentScreen_pid,true);
 					/*Eh o pai*/
 					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o
 					pid da screen atual para poder dar exit quando for necessario*/
@@ -163,9 +170,11 @@ int main ()
 					/*Eh o filho*/
 					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
 					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
-					while (true)
+
+					while (read(rw_setup[0], message, 15) > 0)
 					{
-						read(rw_setup[0], message, 15);
+						// cout << "meu pid " << currentScreen->getPid() << endl;
+						// cout << "meu status " << currentScreen->getStatus() << endl;
         		cout << message << endl;
 					}
 				}
@@ -176,8 +185,11 @@ int main ()
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
-				if (currentScreen->getStatus())
+				if (activeScreens.size() != 0)
 				{
+					Screen activeScreen = getActiveScreen(activeScreens);
+					listScreens(activeScreens);
+					cout << "meu pid " << activeScreen.getPid() << endl;
 					cout << "enviando mensagem para o filho" << endl;
 					write(rw_setup[1], commandPath, 15);
 				}

@@ -1,6 +1,5 @@
 #include "screen.h"
 #include <iostream>
-using namespace std;
 
 Screen::Screen (pid_t currentPid, bool status)
 {

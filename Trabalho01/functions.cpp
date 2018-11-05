@@ -12,8 +12,13 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <vector>
 #include "consts.h"
+#include "screen.h"
 #include "functions.h"
+
+#include <iostream>
+
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
 int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
@@ -107,4 +112,29 @@ void printInvalidCommand ()
 	printf(RED_COLOR);
 	printf("Comando não existente. Por favor, digite novamente.\n");
 	printf(RESET_COLOR);
+}
+
+Screen getActiveScreen (std::vector <Screen> activeScreens)
+{
+	for (std::vector<Screen>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
+	{
+	     if (iter->getStatus())
+			 	return *iter;
+	}
+}
+
+void listScreens (std::vector <Screen> activeScreens)
+{
+	for (std::vector<Screen>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
+	{
+	     std::cout << "Screen: " << iter->getPid() << std::endl;
+	}
+}
+
+void deactivateScreens (std::vector <Screen> *activeScreens)
+{
+    for (std::vector<Screen>::iterator iter = activeScreens->begin(); iter != activeScreens->end(); iter++)
+    {
+            iter->setStatus(false);
+    }
 }
