@@ -13,17 +13,22 @@
 #include <unistd.h>
 #include <sys/wait.h>
 #include <vector>
+#include <fstream>
+#include <string>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <iostream>
 #include "screen.h"
 #include "functions.h"
 #include "consts.h"
 
-#include <iostream>
+
 using namespace std;
 
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
 pid_t currentScreen_pid;
-vector <Screen> activeScreens;
+vector <Screen*> activeScreens;
 Screen * currentScreen;
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
@@ -44,9 +49,9 @@ int main ()
 	char userInput [BUFFER];
 	char inputCopy [BUFFER];
 	int p, f;
-  int rw_setup[2];
-  char message[BUFFER];
-  p = pipe(rw_setup);
+  	int rw_setup[2];
+  	char message[BUFFER];
+  	p = pipe(rw_setup);
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
@@ -136,7 +141,7 @@ int main ()
 			if (flagExit == 0)
 			{
 				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
-				/*Vai ter uma lista de array, preciso remover o filho que terminamos de executar*/
+				/*Vai ter uma lista de array, preciso matar todos os filhos tambem*/
 				exit = 1;
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}
@@ -151,32 +156,57 @@ int main ()
 
 			else if (flagScreen == 0)
 			{
+				currentScreen = new Screen(true);	
+		  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
 				currentScreen_pid = fork();
-				deactivateScreens(&activeScreens);
-				currentScreen = new Screen(currentScreen_pid,true);
-				activeScreens.push_back(*currentScreen);
+				deactivateScreens(&activeScreens);	
+
+				for (int i = 0; i < activeScreens.size(); i++) 
+				{					
+					if (activeScreens[i]->getStatus() == false)
+						cout << "false" << endl;
+					else
+						cout << "true" << endl;
+					cout << activeScreens[i]->getFilename()<< endl;
+				}
+
+				activeScreens.push_back(currentScreen);
 
 				if (currentScreen_pid > 0)
 				{
-					// cout << "Pid do pai : " << getpid() << endl;
-					// cout << "Pid do filho : " << currentScreen_pid << endl;
-					// currentScreen = new Screen(currentScreen_pid,true);
-					/*Eh o pai*/
-					/*Vai instanciar uma objeto da classe screen, que vai ficar ativo, e vai armazenar o
-					pid da screen atual para poder dar exit quando for necessario*/
+					//Eh o pai
+					currentScreen->setPid(currentScreen_pid);
+
 				}
 				else if (currentScreen_pid == 0)
 				{
 					/*Eh o filho*/
-					/*Vai ficar ouvindo, atraves de um pipe por um comando que o pai vai repassar*/
-					/*Preciso saber como que vou fazer o filho ouvir num pipe*/
+					/*Vai ficar lendo de um arquivo, a procura de alguma alteracao*/
+					// ifstream childScreenFile (currentScreen->getFilename());					
+					// string line;
+					// if (childScreenFile.is_open()) 
+					// {
+					// 	while (getline(childScreenFile, line)) 
+					// 	{
+					// 		cout << line << endl;
+					// 	}
+					// }
 
-					while (read(rw_setup[0], message, 15) > 0)
-					{
-						// cout << "meu pid " << currentScreen->getPid() << endl;
-						// cout << "meu status " << currentScreen->getStatus() << endl;
-        		cout << message << endl;
-					}
+					// Child
+				    int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
+				    char buf[20];
+				    for (;;) {
+				      ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
+				      if (num_read == 0) {
+				        write_str(1, "Read EOF; closing read end\n");
+				        // guard(close(pipe_read_fd), "Could not close pipe read end");
+				        break;
+				      } else {
+				        write_str(1, "Read from pipe: ");
+				        write_all(1, buf, num_read);
+				        write_str(1, "\n");
+				      }
+				    }
 				}
 			}
 			else
@@ -187,11 +217,29 @@ int main ()
 				strcat(commandPath,arguments[0]);
 				if (activeScreens.size() != 0)
 				{
+					/*Se for o caso de ter pelo menos uma screen ativa*/
+
+					/*Pega a screen ativa atual*/
 					Screen activeScreen = getActiveScreen(activeScreens);
-					listScreens(activeScreens);
-					cout << "meu pid " << activeScreen.getPid() << endl;
-					cout << "enviando mensagem para o filho" << endl;
-					write(rw_setup[1], commandPath, 15);
+
+					/*Debug para listar screens*/
+					listScreens(activeScreens);					
+
+					/*Debug para o nome do arquivo*/
+					cout << activeScreen.getFilename() << endl;					
+
+					/*Aqui eu preciso criar um arquivo e escrever nele o comando que a 
+					screen tem que executar*/
+					// activeScreen.createScreenFilename();
+					// ofstream screenFile;								
+					// screenFile.open(activeScreen.getFilename());
+					// screenFile << commandPath;
+					// screenFile.close();					
+
+					// Parent
+				    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
+				    write_str(pipe_write_fd, commandPath);
+				    guard(close(pipe_write_fd), "Could not close pipe write end");
 				}
 				else
 				{

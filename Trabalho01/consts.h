@@ -19,3 +19,4 @@
 #define RED_COLOR		"\033[1;31m"
 #define MAGENTA_COLOR	"\033[1;35m"
 #define RESET_COLOR 	"\033[0m"
+#define FIFO_PATH		"./files/"

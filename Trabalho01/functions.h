@@ -7,6 +7,7 @@
 /*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
 
 #include <vector>
+#include <string>
 
 /*Declaracao da funcao para Tratamento de strings*/
 int getArgumentsFromCommand(char*, char**, char**);
@@ -21,8 +22,16 @@ void typeCommand ();
 
 void printInvalidCommand ();
 
-Screen getActiveScreen (std::vector<Screen>);
+Screen getActiveScreen (std::vector<Screen*>);
 
-void listScreens (std::vector<Screen>);
+void listScreens (std::vector<Screen*>);
 
-void deactivateScreens (std::vector<Screen>*);
+void deactivateScreens (std::vector<Screen*>*);
+
+std::string createScreenFilename(pid_t);
+
+int guard(int, char *);
+
+void write_all(int, char *, size_t);
+
+void write_str(int, char *);

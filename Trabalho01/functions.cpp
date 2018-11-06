@@ -114,27 +114,41 @@ void printInvalidCommand ()
 	printf(RESET_COLOR);
 }
 
-Screen getActiveScreen (std::vector <Screen> activeScreens)
+Screen getActiveScreen (std::vector <Screen*> activeScreens)
 {
-	for (std::vector<Screen>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
+	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
 	{
-	     if (iter->getStatus())
-			 	return *iter;
+	     if ((*iter)->getStatus())
+			 	return **iter;
 	}
 }
 
-void listScreens (std::vector <Screen> activeScreens)
+void listScreens (std::vector <Screen*> activeScreens)
 {
-	for (std::vector<Screen>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
+	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
 	{
-	     std::cout << "Screen: " << iter->getPid() << std::endl;
+	     std::cout << "Screen: " << (*iter)->getPid() << std::endl;
 	}
 }
 
-void deactivateScreens (std::vector <Screen> *activeScreens)
+void deactivateScreens (std::vector <Screen*> *activeScreens)
 {
-    for (std::vector<Screen>::iterator iter = activeScreens->begin(); iter != activeScreens->end(); iter++)
+    for (std::vector<Screen*>::iterator iter = activeScreens->begin(); iter != activeScreens->end(); iter++)
     {
-            iter->setStatus(false);
+            (*iter)->setStatus(false);            
     }
 }
+
+int guard(int ret, char * err) {
+  if (ret == -1) { perror(err); exit(1); }
+  return ret;
+}
+
+void write_all(int fd, char * bytes, size_t nbyte) {
+  ssize_t written = 0;
+  while(written < nbyte) {
+    written += guard(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
+  }
+}
+
+void write_str(int fd, char * chars) { write_all(fd, chars, strlen(chars)); }

@@ -1,15 +1,25 @@
 #include <sys/types.h>
 #include <unistd.h>
+#include <string>
+#include <sstream>
 
 class Screen
 {
   public:
+
+
     void setStatus (bool);
-		bool getStatus ();
+	bool getStatus ();
     pid_t getPid();
-		Screen (pid_t, bool);
+    void setPid(pid_t);
+    std::string getFilename();
+    void createScreenFilename();
+	Screen (bool);
 
 	private:
 		pid_t pid;
-	  bool active;
+	  	bool active;
+	  	std::string filename;
+	  	static unsigned nextId;
+	  	unsigned screenId;
 };
