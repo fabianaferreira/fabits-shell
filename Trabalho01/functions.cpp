@@ -139,6 +139,15 @@ void deactivateScreens (std::vector <Screen*> *activeScreens)
     }
 }
 
+void exitAllScreens (std::vector <Screen*> activeScreens) 
+{
+	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
+    {
+    		kill((*iter)->getPid(), SIGTERM);                		
+    }
+
+}
+
 int guard(int ret, char * err) {
   if (ret == -1) { perror(err); exit(1); }
   return ret;

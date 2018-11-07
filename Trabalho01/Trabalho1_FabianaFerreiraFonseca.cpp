@@ -142,6 +142,8 @@ int main ()
 			{
 				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
 				/*Vai ter uma lista de array, preciso matar todos os filhos tambem*/
+
+				exitAllScreens(activeScreens);
 				exit = 1;
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}

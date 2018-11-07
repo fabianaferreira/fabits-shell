@@ -28,6 +28,8 @@ void listScreens (std::vector<Screen*>);
 
 void deactivateScreens (std::vector<Screen*>*);
 
+void exitAllScreens (std::vector <Screen*>);
+
 std::string createScreenFilename(pid_t);
 
 int guard(int, char *);
