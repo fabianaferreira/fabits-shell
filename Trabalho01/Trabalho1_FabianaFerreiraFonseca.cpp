@@ -141,8 +141,8 @@ int main ()
 			if (flagExit == 0)
 			{
 				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
-				/*Vai ter uma lista de array, preciso matar todos os filhos tambem*/
-
+				
+				/*Preciso matar todos os filhos tambem*/
 				exitAllScreens(activeScreens);
 				exit = 1;
 				printf("Saindo do shell. Obrigada por testar!\n");
@@ -161,40 +161,39 @@ int main ()
 				currentScreen = new Screen(true);	
 		  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
 				currentScreen_pid = fork();
-				deactivateScreens(&activeScreens);	
+				
+				/*Se nao for a primeira, vai desativar tudo*/
+				if (activeScreens.size() != 0)
+					deactivateScreens(&activeScreens);	
 
-				for (int i = 0; i < activeScreens.size(); i++) 
-				{					
-					if (activeScreens[i]->getStatus() == false)
-						cout << "false" << endl;
-					else
-						cout << "true" << endl;
-					cout << activeScreens[i]->getFilename()<< endl;
-				}
-
+				/*Adiciona screen atual ao array de screens*/
 				activeScreens.push_back(currentScreen);
+			
 
 				if (currentScreen_pid > 0)
 				{
 					//Eh o pai
+
+					/*Debug*/
+					cout << "tamanho do activeScreens ";
+					cout << activeScreens.size() << endl; 
+
+					for (int i = 0; i < activeScreens.size(); i++) 
+					{		
+						cout << "Tela ativa? " << endl;			
+						if (activeScreens[i]->getStatus() == false)
+							cout << "false" << endl;
+						else
+							cout << "true" << endl;
+						cout << activeScreens[i]->getFilename()<< endl;
+					}
+
 					currentScreen->setPid(currentScreen_pid);
 
 				}
 				else if (currentScreen_pid == 0)
 				{
-					/*Eh o filho*/
-					/*Vai ficar lendo de um arquivo, a procura de alguma alteracao*/
-					// ifstream childScreenFile (currentScreen->getFilename());					
-					// string line;
-					// if (childScreenFile.is_open()) 
-					// {
-					// 	while (getline(childScreenFile, line)) 
-					// 	{
-					// 		cout << line << endl;
-					// 	}
-					// }
-
-					// Child
+					/*Eh o filho*/										
 				    int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
 				    char buf[20];
 				    for (;;) {
@@ -204,7 +203,7 @@ int main ()
 				        // guard(close(pipe_read_fd), "Could not close pipe read end");
 				        break;
 				      } else {
-				        write_str(1, "Read from pipe: ");
+				        write_str(1, "Read from pipe: \n");				       
 				        write_all(1, buf, num_read);
 				        write_str(1, "\n");
 				      }
@@ -241,7 +240,7 @@ int main ()
 					// Parent
 				    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 				    write_str(pipe_write_fd, commandPath);
-				    guard(close(pipe_write_fd), "Could not close pipe write end");
+				    // guard(close(pipe_write_fd), "Could not close pipe write end");
 				}
 				else
 				{
