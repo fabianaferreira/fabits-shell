@@ -134,7 +134,7 @@ int main ()
 
 			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem clear nem screen*/
 			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
-				getArgumentsFromCommand(userInput,arguments, &pathOutput);
+				getArgumentsFromCommand(userInput, arguments, &pathOutput);
 
 
 			/*Entrou com um comando que não é o exit*/
@@ -237,6 +237,8 @@ int main ()
 					// screenFile << commandPath;
 					// screenFile.close();					
 
+					cout << "comando inteiro" << endl;
+					cout << inputCopy << endl;
 					// Parent
 				    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 				    write_str(pipe_write_fd, commandPath);
