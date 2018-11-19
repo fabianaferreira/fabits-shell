@@ -24,9 +24,13 @@
 int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 {
 	char* subString;
+	char inputCopy [BUFFER];
 	unsigned counter = 0;
 	unsigned flagOutput = 0;
-	subString = strtok(command, DELIMITER);
+	strcpy(inputCopy, command);
+	subString = strtok(inputCopy, DELIMITER);
+	/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
+	freeArray(arguments);
 	while (subString != NULL)
 	{
 		if (strcmp(subString, ">") == 0)
@@ -135,15 +139,15 @@ void deactivateScreens (std::vector <Screen*> *activeScreens)
 {
     for (std::vector<Screen*>::iterator iter = activeScreens->begin(); iter != activeScreens->end(); iter++)
     {
-            (*iter)->setStatus(false);            
+            (*iter)->setStatus(false);
     }
 }
 
-void exitAllScreens (std::vector <Screen*> activeScreens) 
+void exitAllScreens (std::vector <Screen*> activeScreens)
 {
 	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
     {
-    		kill((*iter)->getPid(), SIGTERM);                		
+    		kill((*iter)->getPid(), SIGTERM);
     }
 
 }

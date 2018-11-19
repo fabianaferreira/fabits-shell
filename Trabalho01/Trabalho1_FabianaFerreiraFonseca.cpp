@@ -48,10 +48,10 @@ int main ()
 	char commandList[BUFFER*20];
 	char userInput [BUFFER];
 	char inputCopy [BUFFER];
-	int p, f;
-  	int rw_setup[2];
-  	char message[BUFFER];
-  	p = pipe(rw_setup);
+	// int p, f;
+	// int rw_setup[2];
+	// char message[BUFFER];
+	// p = pipe(rw_setup);
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
@@ -136,12 +136,11 @@ int main ()
 			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
 				getArgumentsFromCommand(userInput, arguments, &pathOutput);
 
-
 			/*Entrou com um comando que não é o exit*/
 			if (flagExit == 0)
 			{
 				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
-				
+
 				/*Preciso matar todos os filhos tambem*/
 				exitAllScreens(activeScreens);
 				exit = 1;
@@ -158,57 +157,88 @@ int main ()
 
 			else if (flagScreen == 0)
 			{
-				currentScreen = new Screen(true);	
-		  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
+				currentScreen = new Screen(true);
+	  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
 				currentScreen_pid = fork();
-				
+
 				/*Se nao for a primeira, vai desativar tudo*/
 				if (activeScreens.size() != 0)
-					deactivateScreens(&activeScreens);	
+					deactivateScreens(&activeScreens);
 
 				/*Adiciona screen atual ao array de screens*/
 				activeScreens.push_back(currentScreen);
-			
 
 				if (currentScreen_pid > 0)
 				{
 					//Eh o pai
 
 					/*Debug*/
-					cout << "tamanho do activeScreens ";
-					cout << activeScreens.size() << endl; 
+					// cout << "tamanho do activeScreens ";
+					// cout << activeScreens.size() << endl;
 
-					for (int i = 0; i < activeScreens.size(); i++) 
-					{		
-						cout << "Tela ativa? " << endl;			
-						if (activeScreens[i]->getStatus() == false)
-							cout << "false" << endl;
-						else
-							cout << "true" << endl;
-						cout << activeScreens[i]->getFilename()<< endl;
-					}
-
+					// for (int i = 0; i < activeScreens.size(); i++)
+					// {
+					// 	cout << "Tela ativa? " << endl;
+					// 	if (activeScreens[i]->getStatus() == false)
+					// 		cout << "false" << endl;
+					// 	else
+					// 		cout << "true" << endl;
+					// 	cout << activeScreens[i]->getFilename()<< endl;
+					// }
 					currentScreen->setPid(currentScreen_pid);
 
 				}
 				else if (currentScreen_pid == 0)
 				{
-					/*Eh o filho*/										
+					/*Eh o filho*/
 				    int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
 				    char buf[20];
+						char input[BUFFER];
 				    for (;;) {
 				      ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
 				      if (num_read == 0) {
 				        write_str(1, "Read EOF; closing read end\n");
 				        // guard(close(pipe_read_fd), "Could not close pipe read end");
 				        break;
-				      } else {
-				        write_str(1, "Read from pipe: \n");				       
-				        write_all(1, buf, num_read);
-				        write_str(1, "\n");
 				      }
+							else {
+								strncpy(input, buf, num_read);
+								input[num_read] = '\0';
+
+								getArgumentsFromCommand(input, arguments, &pathOutput);
+								char* commandPath = (char*)malloc(sizeof(char*)*20);
+								strcpy(commandPath, PATH);
+								strcat(commandPath,arguments[0]);
+								child_pid = fork();
+								if (child_pid == 0)
+								{
+									/*CHILD*/
+									/*Testa o caso em que o usuario não quer printar na tela a saída do comando
+									  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
+									if (strlen(pathOutput) != 0)
+									{
+										printf("Caminho da saida foi configurado para %s\n", pathOutput);
+										stream = fopen(pathOutput, "w");
+										dup2(fileno(stream), fileno(stdout));
+									}
+									execv(commandPath, arguments);
+
+									if (strlen(pathOutput) != 0)
+										fclose(stream);
+								}
+								else
+								{
+									/*PARENT*/
+									/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
+									  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
+									waitpid(child_pid, NULL, WCONTINUED);
+								}
+								free(commandPath);
+				      } /*else*/
+							/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
+							freeArray(arguments);
 				    }
-				}
+				} /*filho*/
 			}
 			else
 			{
@@ -224,25 +254,15 @@ int main ()
 					Screen activeScreen = getActiveScreen(activeScreens);
 
 					/*Debug para listar screens*/
-					listScreens(activeScreens);					
+					// listScreens(activeScreens);
 
 					/*Debug para o nome do arquivo*/
-					cout << activeScreen.getFilename() << endl;					
+					// cout << activeScreen.getFilename() << endl;
 
-					/*Aqui eu preciso criar um arquivo e escrever nele o comando que a 
-					screen tem que executar*/
-					// activeScreen.createScreenFilename();
-					// ofstream screenFile;								
-					// screenFile.open(activeScreen.getFilename());
-					// screenFile << commandPath;
-					// screenFile.close();					
-
-					cout << "comando inteiro" << endl;
-					cout << inputCopy << endl;
 					// Parent
-				    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
-				    write_str(pipe_write_fd, commandPath);
-				    // guard(close(pipe_write_fd), "Could not close pipe write end");
+			    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
+			    write_str(pipe_write_fd, userInput);
+			    // guard(close(pipe_write_fd), "Could not close pipe write end");
 				}
 				else
 				{
@@ -274,7 +294,6 @@ int main ()
 					free(commandPath);
 				}
 			}
-
 		/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
 		freeArray(arguments);
 		}
