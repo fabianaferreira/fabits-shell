@@ -13,8 +13,8 @@ As telas têm opções no comando, para diversas funções. Em geral, é possív
 
 Além disso, a implementação das diferentes telas se faz a partir de _fifos_ que são criadas dentro da pasta oculta `.files`, de forma que cada uma tenha a sua fila, que é responsável por receber os comandos processados pelo processo pai, a fim de ser executado na tela ativa no momento.
 
-* Listar telas ativas: `screen -l`
-* Excluir uma tela específica: `screen -rm <nome tela>`
-* Alterar tela ativa: `screen -a <nome tela a ser ativada>`
+* Listar telas ativas: `screen list`
+* Excluir uma tela específica: `screen remove <nome tela>`
+* Alterar tela ativa: `screen switch <nome tela a ser ativada>`
 
 ## Extra: Desenvolvimento de um monitorador de tarefas básico
