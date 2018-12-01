@@ -48,16 +48,13 @@ int main ()
 	char commandList[BUFFER*20];
 	char userInput [BUFFER];
 	char inputCopy [BUFFER];
-	// int p, f;
-	// int rw_setup[2];
-	// char message[BUFFER];
-	// p = pipe(rw_setup);
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
 	char* pathOutput = (char*)malloc(sizeof(char*));
 	unsigned exit = 0;
 	int pipefd[2];
+	int piperm[2];
 
 	/*Faço uma chamada de execv para listar os comandos que estão na
 	pasta bin, de forma a conseguir tratar o erro, caso o usuário entre
@@ -95,6 +92,7 @@ int main ()
 		signal(SIGUSR1, signal_handler);
 		if (fgets(userInput, BUFFER, stdin) != NULL)
 		{
+			cout << userInput << endl;
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
@@ -217,7 +215,7 @@ int main ()
 									  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
 									if (strlen(pathOutput) != 0)
 									{
-										printf("Caminho da saida foi configurado para %s\n", pathOutput);
+										printf("Caminho da saida foi configurado pa ra %s\n", pathOutput);
 										stream = fopen(pathOutput, "w");
 										dup2(fileno(stream), fileno(stdout));
 									}
@@ -301,5 +299,7 @@ int main ()
 	/*Liberado o espaço de memoria alocado pelo proprio array*/
 	free(arguments);
 	delete currentScreen;
+	/*Excluindo arquivos dentro da pasta de files*/
+	system("exec rm -r ./.files/screen*");
 	return 0;
 }

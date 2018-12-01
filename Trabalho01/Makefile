@@ -4,7 +4,7 @@ CFLAGS  = -Wall
 
 OBJFILES = screen.o functions.o Trabalho1_FabianaFerreiraFonseca.o
 TARGET = Trabalho1_FabianaFerreiraFonseca.exe
-SCREENDIR = ./files
+SCREENDIR = ./.files
 
 all: $(TARGET)
 
