@@ -53,8 +53,7 @@ int main ()
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
 	char* pathOutput = (char*)malloc(sizeof(char*));
 	unsigned exit = 0;
-	int pipefd[2];
-	int piperm[2];
+	int pipefd[2];	
 
 	/*Faço uma chamada de execv para listar os comandos que estão na
 	pasta bin, de forma a conseguir tratar o erro, caso o usuário entre
@@ -86,13 +85,11 @@ int main ()
 	{
 		printf(GREEN_COLOR);
 		cout << "$fabitsShell: ";
-		// cout << "Pid atual 1 : " << getpid() << endl;
 
 		printf(RESET_COLOR);
 		signal(SIGUSR1, signal_handler);
 		if (fgets(userInput, BUFFER, stdin) != NULL)
 		{
-			cout << userInput << endl;
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
@@ -156,7 +153,7 @@ int main ()
 			else if (flagScreen == 0)
 			{
 				currentScreen = new Screen(true);
-	  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
+	  		checkError(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
 				currentScreen_pid = fork();
 
 				/*Se nao for a primeira, vai desativar tudo*/
@@ -175,14 +172,14 @@ int main ()
 				else if (currentScreen_pid == 0)
 				{
 					/*Eh o filho*/
-				    int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
+				    int pipe_read_fd = checkError(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
 				    char buf[20];
 						char input[BUFFER];
 				    for (;;) {
-				      ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
+				      ssize_t num_read = checkError(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
 				      if (num_read == 0) {
 				        write_str(1, "Read EOF; closing read end\n");
-				        // guard(close(pipe_read_fd), "Could not close pipe read end");
+				        // checkError(close(pipe_read_fd), "Could not close pipe read end");
 				        break;
 				      }
 							else {
@@ -236,11 +233,11 @@ int main ()
 
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = getActiveScreen(activeScreens);
-										
+
 					// Parent
-			    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
+			    int pipe_write_fd = checkError(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);
-			    // guard(close(pipe_write_fd), "Could not close pipe write end");
+			    // checkError(close(pipe_write_fd), "Could not close pipe write end");
 				}
 				else
 				{
@@ -280,6 +277,7 @@ int main ()
 	free(arguments);
 	delete currentScreen;
 	/*Excluindo arquivos dentro da pasta de files*/
-	system("exec rm -r ./.files/screen*");
+	if (!activeScreens.empty())
+		system("exec rm -r ./.files/screen*");
 	return 0;
 }

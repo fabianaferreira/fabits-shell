@@ -35,6 +35,7 @@ int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 	{
 		if (strcmp(subString, ">") == 0)
 			flagOutput = 1;
+
 		else
 		{
 			/*Se tiver a flag, a string vai receber o resultado do parser atual da strtok*/
@@ -152,16 +153,20 @@ void exitAllScreens (std::vector <Screen*> activeScreens)
 
 }
 
-int guard(int ret, char * err) {
-  if (ret == -1) { perror(err); exit(1); }
+int checkError(int ret, std::string error) {
+  if (ret == -1) { perror(error.c_str()); exit(1); }
   return ret;
 }
 
-void write_all(int fd, char * bytes, size_t nbyte) {
+void writeAllToFifo(int fd, char * bytes, size_t nbyte) {
   ssize_t written = 0;
   while(written < nbyte) {
-    written += guard(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
+    written += checkError(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
   }
 }
 
-void write_str(int fd, char * chars) { write_all(fd, chars, strlen(chars)); }
+void write_str(int fd, std::string chars) {
+	char *string = new char[chars.size()+1];
+ 	strcpy(string,chars.c_str( ));
+	writeAllToFifo(fd, string, chars.length());
+}

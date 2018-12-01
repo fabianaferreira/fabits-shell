@@ -32,8 +32,8 @@ void exitAllScreens (std::vector <Screen*>);
 
 std::string createScreenFilename(pid_t);
 
-int guard(int, char *);
+int checkError(int, std::string);
 
 void write_all(int, char *, size_t);
 
-void write_str(int, char *);
+void write_str(int, std::string);
