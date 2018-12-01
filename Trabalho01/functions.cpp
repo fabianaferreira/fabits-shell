@@ -21,7 +21,7 @@
 
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
-int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
+int getArgumentsFromCommand (char* command, char** arguments, std::string* pathOutput)
 {
 	char* subString;
 	char inputCopy [BUFFER];
@@ -41,7 +41,7 @@ int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 			/*Se tiver a flag, a string vai receber o resultado do parser atual da strtok*/
 			if (flagOutput){
 				/*Mudando o valor da variavel pathOutput e atribuindo o valor na posicao de memoria da subString*/
-				*pathOutput = subString;
+				pathOutput->assign(subString);
 			}
 			else
 			{

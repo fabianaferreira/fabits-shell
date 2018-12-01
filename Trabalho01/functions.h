@@ -10,7 +10,7 @@
 #include <string>
 
 /*Declaracao da funcao para Tratamento de strings*/
-int getArgumentsFromCommand(char*, char**, char**);
+int getArgumentsFromCommand(char*, char**, std::string*);
 
 void freeArray(char**);
 

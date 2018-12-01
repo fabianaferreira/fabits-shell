@@ -51,9 +51,9 @@ int main ()
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
-	char* pathOutput = (char*)malloc(sizeof(char*));
+	string pathOutput = "";
 	unsigned exit = 0;
-	int pipefd[2];	
+	int pipefd[2];
 
 	/*Faço uma chamada de execv para listar os comandos que estão na
 	pasta bin, de forma a conseguir tratar o erro, caso o usuário entre
@@ -196,15 +196,15 @@ int main ()
 									/*CHILD*/
 									/*Testa o caso em que o usuario não quer printar na tela a saída do comando
 									  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-									if (strlen(pathOutput) != 0)
+									if (pathOutput.length() != 0)
 									{
-										printf("Caminho da saida foi configurado pa ra %s\n", pathOutput);
-										stream = fopen(pathOutput, "w");
+										cout << "Caminho da saida foi configurado para: " + pathOutput << endl;;
+										stream = fopen(pathOutput.c_str(), "w");
 										dup2(fileno(stream), fileno(stdout));
 									}
 									execv(commandPath, arguments);
 
-									if (strlen(pathOutput) != 0)
+									if (pathOutput.length() != 0)
 										fclose(stream);
 								}
 								else
@@ -247,16 +247,16 @@ int main ()
 						/*CHILD*/
 						/*Testa o caso em que o usuario não quer printar na tela a saída do comando
 						  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-						if (strlen(pathOutput) != 0)
+						if (pathOutput.length() != 0)
 						{
-							printf("Caminho da saida foi configurado para %s\n", pathOutput);
-							stream = fopen(pathOutput, "w");
+							cout << "Caminho da saida foi configurado para: " + pathOutput << endl;
+							stream = fopen(pathOutput.c_str(), "w");
 							dup2(fileno(stream), fileno(stdout));
 						}
 						/*Executa o comando pedido pelo usuario*/
 						execv(commandPath, arguments);
 
-						if (strlen(pathOutput) != 0)
+						if (pathOutput.length() != 0)
 							fclose(stream);
 					}
 					else
