@@ -169,20 +169,6 @@ int main ()
 				if (currentScreen_pid > 0)
 				{
 					//Eh o pai
-
-					/*Debug*/
-					// cout << "tamanho do activeScreens ";
-					// cout << activeScreens.size() << endl;
-
-					// for (int i = 0; i < activeScreens.size(); i++)
-					// {
-					// 	cout << "Tela ativa? " << endl;
-					// 	if (activeScreens[i]->getStatus() == false)
-					// 		cout << "false" << endl;
-					// 	else
-					// 		cout << "true" << endl;
-					// 	cout << activeScreens[i]->getFilename()<< endl;
-					// }
 					currentScreen->setPid(currentScreen_pid);
 
 				}
@@ -250,13 +236,7 @@ int main ()
 
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = getActiveScreen(activeScreens);
-
-					/*Debug para listar screens*/
-					// listScreens(activeScreens);
-
-					/*Debug para o nome do arquivo*/
-					// cout << activeScreen.getFilename() << endl;
-
+										
 					// Parent
 			    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);
