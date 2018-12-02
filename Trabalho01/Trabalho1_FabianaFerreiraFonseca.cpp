@@ -176,11 +176,13 @@ int main ()
           }
           else if (command.compare("remove") == 0)
           {
-            cout << "remove screen" << endl;
+            string screenName = screenArguments[2];
+            cout << "remove screen " << screenName << endl;
           }
           else if (command.compare("switch") == 0)
           {
-            cout << "switch screen" << endl;
+            string screenName = screenArguments[2];
+            cout << "switch to screen " << screenName << endl;
           }
           else
           {

@@ -84,7 +84,7 @@ void Screen::listScreens()
        iter != Screen::activeScreens.end();
        iter++)
   {
-       std::cout << "Screen: " << (*iter)->getPid() << std::endl;
+    std::cout << "Screen: " << (*iter)->getPid() << std::endl;
   }
 }
 
@@ -104,6 +104,31 @@ void Screen::deactivateAllScreens ()
        iter != Screen::activeScreens.end();
        iter++)
   {
-          (*iter)->setStatus(false);
+    (*iter)->setStatus(false);
   }
+}
+
+void Screen::activateScreen (std::string screenName)
+{
+  // bool achou = false;
+  // for (std::vector<Screen*>::iterator iter = Screen::activeScreens.begin();
+  //      iter != Screen::activeScreens.end();
+  //      iter++)
+  // {
+  //   if ((*iter)->getName().compare(screenName) == 0)
+  //   {
+  //     Screen::deactivateAllScreens()
+  //     (*iter)->setStatus(true);
+  //     break;
+  //   }
+  //
+  // }
+  // if (achou)
+  // for screen in Screen::
+  //Screen::deactivateAllScreens();
+}
+
+void Screen::removeScreen (std::string screenName)
+{
+
 }

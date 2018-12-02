@@ -16,12 +16,16 @@ class Screen
     std::string getFilename();
     void createScreenFilename();
 
+    // Variaveis estaticas
     static std::vector <Screen*> activeScreens;
 
-    static Screen getActiveScreen();
-    static void listScreens();
-    static void deactivateAllScreens();
-    static void killAllScreens();
+    // Metodos estaticos
+    static Screen getActiveScreen ();
+    static void listScreens ();
+    static void deactivateAllScreens ();
+    static void killAllScreens ();
+    static void activateScreen (std::string);
+    static void removeScreen (std::string);
 
   private:
     pid_t pid;
