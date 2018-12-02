@@ -28,7 +28,7 @@ using namespace std;
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
 pid_t child_pid;
 pid_t currentScreen_pid;
-vector <Screen*> activeScreens;
+
 Screen * currentScreen;
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
@@ -48,6 +48,7 @@ int main ()
 	char commandList[BUFFER*20];
 	char userInput [BUFFER];
 	char inputCopy [BUFFER];
+  vector <string> screenArguments;
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
@@ -92,7 +93,6 @@ int main ()
 		signal(SIGUSR1, signal_handler);
 		if (fgets(userInput, BUFFER, stdin) != NULL)
 		{
-			cout << userInput << endl;
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
@@ -108,8 +108,10 @@ int main ()
 			flagCd = strcmp(inputCopy, "cd");
 			flagMan = strcmp(userInput, MAN_COMMAND);
 			flagClear = strcmp(userInput, CLEAR_COMMAND);
-			flagScreen = strcmp(userInput, SCREEN_COMMAND);
 			flagExit = strcmp(userInput, EXIT_COMMAND);
+
+      string userInputString (userInput);
+      flagScreen = (userInputString.find(SCREEN_COMMAND) == 0) ? 0 : 1;
 
 			/*Tratando o caso em que o usuário apenas dá enter e quando o comando não existe*/
 			if ((inputLength == 1 && userInput[inputLength - 1] == '\n') || inputLength == 2)
@@ -133,6 +135,14 @@ int main ()
 			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem clear nem screen*/
 			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
 				getArgumentsFromCommand(userInput, arguments, &pathOutput);
+      /*Se for screen, usa outro parser*/
+      else if (flagScreen == 0)
+      {
+        // Clear screen arguments before parsing it again
+        screenArguments.clear();
+        screenArguments = parseString(userInput, ' ');
+      }
+
 
 			/*Entrou com um comando que não é o exit*/
 			if (flagExit == 0)
@@ -140,7 +150,7 @@ int main ()
 				/*No caso do exit, preciso que o sigterm passe para o pid certo, o cara ativo no momento */
 
 				/*Preciso matar todos os filhos tambem*/
-				exitAllScreens(activeScreens);
+				Screen::killAllScreens();
 				exit = 1;
 				printf("Saindo do shell. Obrigada por testar!\n");
 			}
@@ -155,101 +165,119 @@ int main ()
 
 			else if (flagScreen == 0)
 			{
-				currentScreen = new Screen(true);
-	  		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
-				currentScreen_pid = fork();
+        if (screenArguments.size() > 1)
+        {
+          string command = screenArguments[1];
+          // list, remove, switch
+          if (command.compare("list") == 0)
+          {
+            cout << "list screen" << endl;
+          }
+          else if (command.compare("remove") == 0)
+          {
+            cout << "remove screen" << endl;
+          }
+          else if (command.compare("switch") == 0)
+          {
+            cout << "switch screen" << endl;
+          }
+          else
+          {
+            printInvalidCommand();
+    				continue;
+          }
+        }
+        else
+        {
+          currentScreen = new Screen(true);
+      		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
+      		currentScreen_pid = fork();
 
-				/*Se nao for a primeira, vai desativar tudo*/
-				if (activeScreens.size() != 0)
-					deactivateScreens(&activeScreens);
+      		if (currentScreen_pid > 0)
+      		{
+      			//Eh o pai
 
-				/*Adiciona screen atual ao array de screens*/
-				activeScreens.push_back(currentScreen);
+      			/*Debug*/
+      			// cout << "tamanho do activeScreens ";
+      			// cout << activeScreens.size() << endl;
 
-				if (currentScreen_pid > 0)
-				{
-					//Eh o pai
+      			// for (int i = 0; i < activeScreens.size(); i++)
+      			// {
+      			// 	cout << "Tela ativa? " << endl;
+      			// 	if (activeScreens[i]->getStatus() == false)
+      			// 		cout << "false" << endl;
+      			// 	else
+      			// 		cout << "true" << endl;
+      			// 	cout << activeScreens[i]->getFilename()<< endl;
+      			// }
+      			currentScreen->setPid(currentScreen_pid);
 
-					/*Debug*/
-					// cout << "tamanho do activeScreens ";
-					// cout << activeScreens.size() << endl;
+      		}
+      		else if (currentScreen_pid == 0)
+      		{
+      			/*Eh o filho*/
+            int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
+    		    char buf[20];
+    				char input[BUFFER];
+    		    for (;;) {
+              ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
+    		      if (num_read == 0) {
+    		        write_str(1, "Read EOF; closing read end\n");
+    		        // guard(close(pipe_read_fd), "Could not close pipe read end");
+    		        break;
+    		      }
+    					else {
+    						strncpy(input, buf, num_read);
+    						input[num_read] = '\0';
 
-					// for (int i = 0; i < activeScreens.size(); i++)
-					// {
-					// 	cout << "Tela ativa? " << endl;
-					// 	if (activeScreens[i]->getStatus() == false)
-					// 		cout << "false" << endl;
-					// 	else
-					// 		cout << "true" << endl;
-					// 	cout << activeScreens[i]->getFilename()<< endl;
-					// }
-					currentScreen->setPid(currentScreen_pid);
+    						getArgumentsFromCommand(input, arguments, &pathOutput);
+    						char* commandPath = (char*)malloc(sizeof(char*)*20);
+    						strcpy(commandPath, PATH);
+    						strcat(commandPath,arguments[0]);
+    						child_pid = fork();
+    						if (child_pid == 0)
+    						{
+    							/*CHILD*/
+    							/*Testa o caso em que o usuario não quer printar na tela a saída do comando
+    							  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
+    							if (strlen(pathOutput) != 0)
+    							{
+    								printf("Caminho da saida foi configurado pa ra %s\n", pathOutput);
+    								stream = fopen(pathOutput, "w");
+    								dup2(fileno(stream), fileno(stdout));
+    							}
+    							execv(commandPath, arguments);
 
-				}
-				else if (currentScreen_pid == 0)
-				{
-					/*Eh o filho*/
-				    int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
-				    char buf[20];
-						char input[BUFFER];
-				    for (;;) {
-				      ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
-				      if (num_read == 0) {
-				        write_str(1, "Read EOF; closing read end\n");
-				        // guard(close(pipe_read_fd), "Could not close pipe read end");
-				        break;
-				      }
-							else {
-								strncpy(input, buf, num_read);
-								input[num_read] = '\0';
-
-								getArgumentsFromCommand(input, arguments, &pathOutput);
-								char* commandPath = (char*)malloc(sizeof(char*)*20);
-								strcpy(commandPath, PATH);
-								strcat(commandPath,arguments[0]);
-								child_pid = fork();
-								if (child_pid == 0)
-								{
-									/*CHILD*/
-									/*Testa o caso em que o usuario não quer printar na tela a saída do comando
-									  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-									if (strlen(pathOutput) != 0)
-									{
-										printf("Caminho da saida foi configurado pa ra %s\n", pathOutput);
-										stream = fopen(pathOutput, "w");
-										dup2(fileno(stream), fileno(stdout));
-									}
-									execv(commandPath, arguments);
-
-									if (strlen(pathOutput) != 0)
-										fclose(stream);
-								}
-								else
-								{
-									/*PARENT*/
-									/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
-									  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
-									waitpid(child_pid, NULL, WCONTINUED);
-								}
-								free(commandPath);
-				      } /*else*/
-							/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
-							freeArray(arguments);
-				    }
-				} /*filho*/
-			}
+    							if (strlen(pathOutput) != 0)
+    								fclose(stream);
+    						}
+    						else
+    						{
+    							/*PARENT*/
+    							/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
+    							  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
+    							waitpid(child_pid, NULL, WCONTINUED);
+    						}
+    						free(commandPath);
+    		      } /*else*/
+    					/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
+    					freeArray(arguments);
+    		    }
+    			} /*filho*/
+        } /*else*/
+		  }
 			else
 			{
 				/*Tratamento do caminho para o comando a ser executado*/
 				char* commandPath = (char*)malloc(sizeof(char*)*20);
 				strcpy(commandPath, PATH);
 				strcat(commandPath,arguments[0]);
-				if (activeScreens.size() != 0)
+				if (Screen::activeScreens.size() != 0)
 				{
 					/*Se for o caso de ter pelo menos uma screen ativa*/
 
 					/*Pega a screen ativa atual*/
-					Screen activeScreen = getActiveScreen(activeScreens);
+					Screen activeScreen = Screen::getActiveScreen();
 
 					/*Debug para listar screens*/
 					// listScreens(activeScreens);

@@ -10,7 +10,7 @@
 #define BUFFER			100
 #define DELIMITER 		" "
 #define CLEAR_COMMAND 	"clear\n"
-#define SCREEN_COMMAND 	"screen\n"
+#define SCREEN_COMMAND 	"screen"
 #define EXIT_COMMAND 	"exit\n"
 #define MAN_COMMAND		"man fabits\n"
 #define PATH 			"/bin/"

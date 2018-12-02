@@ -6,6 +6,7 @@
 
 /*TRABALHO: IMPLEMENTAÇÃO DE UM SHELL PARA LINUX COM MULTIPLAS TELAS*/
 
+#include <sstream>
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -118,40 +119,6 @@ void printInvalidCommand ()
 	printf(RESET_COLOR);
 }
 
-Screen getActiveScreen (std::vector <Screen*> activeScreens)
-{
-	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
-	{
-	     if ((*iter)->getStatus())
-			 	return **iter;
-	}
-}
-
-void listScreens (std::vector <Screen*> activeScreens)
-{
-	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
-	{
-	     std::cout << "Screen: " << (*iter)->getPid() << std::endl;
-	}
-}
-
-void deactivateScreens (std::vector <Screen*> *activeScreens)
-{
-    for (std::vector<Screen*>::iterator iter = activeScreens->begin(); iter != activeScreens->end(); iter++)
-    {
-            (*iter)->setStatus(false);
-    }
-}
-
-void exitAllScreens (std::vector <Screen*> activeScreens)
-{
-	for (std::vector<Screen*>::iterator iter = activeScreens.begin(); iter != activeScreens.end(); iter++)
-    {
-    		kill((*iter)->getPid(), SIGTERM);
-    }
-
-}
-
 int guard(int ret, char * err) {
   if (ret == -1) { perror(err); exit(1); }
   return ret;
@@ -165,3 +132,13 @@ void write_all(int fd, char * bytes, size_t nbyte) {
 }
 
 void write_str(int fd, char * chars) { write_all(fd, chars, strlen(chars)); }
+
+std::vector<std::string> parseString (std::string str, char delimiter) {
+  std::vector<std::string> tokenVector;
+  std::stringstream ss (str);
+  std::string token;
+  while (std::getline (ss, token, delimiter)) {
+      tokenVector.push_back (token);
+  }
+  return tokenVector;
+}
