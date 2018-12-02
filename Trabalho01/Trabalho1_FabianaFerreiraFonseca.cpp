@@ -172,6 +172,7 @@ int main ()
           if (command.compare("list") == 0)
           {
             cout << "list screen" << endl;
+            Screen::listScreens();
           }
           else if (command.compare("remove") == 0)
           {
