@@ -52,10 +52,9 @@ int main ()
 
 	/*Alocando memoria para criar o array que armazenará os argumentos*/
 	char** arguments = (char**)malloc(BUFFER*sizeof(char*));
-	char* pathOutput = (char*)malloc(sizeof(char*));
+	string pathOutput = "";
 	unsigned exit = 0;
 	int pipefd[2];
-	int piperm[2];
 
 	/*Faço uma chamada de execv para listar os comandos que estão na
 	pasta bin, de forma a conseguir tratar o erro, caso o usuário entre
@@ -87,7 +86,6 @@ int main ()
 	{
 		printf(GREEN_COLOR);
 		cout << "$fabitsShell: ";
-		// cout << "Pid atual 1 : " << getpid() << endl;
 
 		printf(RESET_COLOR);
 		signal(SIGUSR1, signal_handler);
@@ -168,20 +166,21 @@ int main ()
         if (screenArguments.size() > 1)
         {
           string command = screenArguments[1];
+					string screenName = "";
+					if (screenArguments.size() > 2)
+						screenName = screenArguments[2];
           // list, remove, switch
           if (command.compare("list") == 0)
           {
             cout << "list screen" << endl;
             Screen::listScreens();
           }
-          else if (command.compare("remove") == 0)
+          else if (command.compare("remove") == 0 && !screenName.empty())
           {
-            string screenName = screenArguments[2];
             cout << "remove screen " << screenName << endl;
           }
-          else if (command.compare("switch") == 0)
+          else if (command.compare("switch") == 0 && !screenName.empty())
           {
-            string screenName = screenArguments[2];
             cout << "switch to screen " << screenName << endl;
           }
           else
@@ -192,83 +191,69 @@ int main ()
         }
         else
         {
-          currentScreen = new Screen(true);
-      		guard(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
-      		currentScreen_pid = fork();
+					currentScreen = new Screen(true);
+		  		checkError(mkfifo(currentScreen->getFilename().c_str(), 0777), "Could not create pipe");
+					currentScreen_pid = fork();
 
-      		if (currentScreen_pid > 0)
-      		{
-      			//Eh o pai
+					if (currentScreen_pid > 0)
+					{
+						//Eh o pai
+						currentScreen->setPid(currentScreen_pid);
 
-      			/*Debug*/
-      			// cout << "tamanho do activeScreens ";
-      			// cout << activeScreens.size() << endl;
+					}
+					else if (currentScreen_pid == 0)
+					{
+						/*Eh o filho*/
+					    int pipe_read_fd = checkError(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
+					    char buf[20];
+							char input[BUFFER];
+					    for (;;) {
+					      ssize_t num_read = checkError(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
+					      if (num_read == 0) {
+					        write_str(1, "Read EOF; closing read end\n");
+					        // checkError(close(pipe_read_fd), "Could not close pipe read end");
+					        break;
+					      }
+								else {
+									strncpy(input, buf, num_read);
+									input[num_read] = '\0';
 
-      			// for (int i = 0; i < activeScreens.size(); i++)
-      			// {
-      			// 	cout << "Tela ativa? " << endl;
-      			// 	if (activeScreens[i]->getStatus() == false)
-      			// 		cout << "false" << endl;
-      			// 	else
-      			// 		cout << "true" << endl;
-      			// 	cout << activeScreens[i]->getFilename()<< endl;
-      			// }
-      			currentScreen->setPid(currentScreen_pid);
+									getArgumentsFromCommand(input, arguments, &pathOutput);
+									char* commandPath = (char*)malloc(sizeof(char*)*20);
+									strcpy(commandPath, PATH);
+									strcat(commandPath,arguments[0]);
+									child_pid = fork();
+									if (child_pid == 0)
+									{
+										/*CHILD*/
+										/*Testa o caso em que o usuario não quer printar na tela a saída do comando
+										  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
+										if (pathOutput.length() != 0)
+										{
+											cout << "Caminho da saida foi configurado para: " + pathOutput << endl;;
+											stream = fopen(pathOutput.c_str(), "w");
+											dup2(fileno(stream), fileno(stdout));
+										}
+										execv(commandPath, arguments);
 
-      		}
-      		else if (currentScreen_pid == 0)
-      		{
-      			/*Eh o filho*/
-            int pipe_read_fd = guard(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
-    		    char buf[20];
-    				char input[BUFFER];
-    		    for (;;) {
-              ssize_t num_read = guard(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
-    		      if (num_read == 0) {
-    		        write_str(1, "Read EOF; closing read end\n");
-    		        // guard(close(pipe_read_fd), "Could not close pipe read end");
-    		        break;
-    		      }
-    					else {
-    						strncpy(input, buf, num_read);
-    						input[num_read] = '\0';
-
-    						getArgumentsFromCommand(input, arguments, &pathOutput);
-    						char* commandPath = (char*)malloc(sizeof(char*)*20);
-    						strcpy(commandPath, PATH);
-    						strcat(commandPath,arguments[0]);
-    						child_pid = fork();
-    						if (child_pid == 0)
-    						{
-    							/*CHILD*/
-    							/*Testa o caso em que o usuario não quer printar na tela a saída do comando
-    							  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-    							if (strlen(pathOutput) != 0)
-    							{
-    								printf("Caminho da saida foi configurado pa ra %s\n", pathOutput);
-    								stream = fopen(pathOutput, "w");
-    								dup2(fileno(stream), fileno(stdout));
-    							}
-    							execv(commandPath, arguments);
-
-    							if (strlen(pathOutput) != 0)
-    								fclose(stream);
-    						}
-    						else
-    						{
-    							/*PARENT*/
-    							/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
-    							  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
-    							waitpid(child_pid, NULL, WCONTINUED);
-    						}
-    						free(commandPath);
-    		      } /*else*/
-    					/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
-    					freeArray(arguments);
-    		    }
-    			} /*filho*/
-        } /*else*/
-		  }
+										if (pathOutput.length() != 0)
+											fclose(stream);
+									}
+									else
+									{
+										/*PARENT*/
+										/*Usei o WCONTINUED pois se fosse NULL, estava recebendo um warning de cast de pointer para int.
+										  A descrição da constante: "also return if a stopped child has been resumed by delivery of SIGCONT*/
+										waitpid(child_pid, NULL, WCONTINUED);
+									}
+									free(commandPath);
+					      } /*else*/
+								/*Libera o espaço de memoria utilizado pelas strings dentro do array*/
+								freeArray(arguments);
+					    }
+					} /*filho*/
+				} /*else*/
+			}
 			else
 			{
 				/*Tratamento do caminho para o comando a ser executado*/
@@ -282,16 +267,10 @@ int main ()
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = Screen::getActiveScreen();
 
-					/*Debug para listar screens*/
-					// listScreens(activeScreens);
-
-					/*Debug para o nome do arquivo*/
-					// cout << activeScreen.getFilename() << endl;
-
 					// Parent
-			    int pipe_write_fd = guard(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
+			    int pipe_write_fd = checkError(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);
-			    // guard(close(pipe_write_fd), "Could not close pipe write end");
+			    // checkError(close(pipe_write_fd), "Could not close pipe write end");
 				}
 				else
 				{
@@ -301,16 +280,16 @@ int main ()
 						/*CHILD*/
 						/*Testa o caso em que o usuario não quer printar na tela a saída do comando
 						  Nesse caso, o usuario coloca no comando onde que ele quer salvar a saida*/
-						if (strlen(pathOutput) != 0)
+						if (pathOutput.length() != 0)
 						{
-							printf("Caminho da saida foi configurado para %s\n", pathOutput);
-							stream = fopen(pathOutput, "w");
+							cout << "Caminho da saida foi configurado para: " + pathOutput << endl;
+							stream = fopen(pathOutput.c_str(), "w");
 							dup2(fileno(stream), fileno(stdout));
 						}
 						/*Executa o comando pedido pelo usuario*/
 						execv(commandPath, arguments);
 
-						if (strlen(pathOutput) != 0)
+						if (pathOutput.length() != 0)
 							fclose(stream);
 					}
 					else
@@ -331,6 +310,7 @@ int main ()
 	free(arguments);
 	delete currentScreen;
 	/*Excluindo arquivos dentro da pasta de files*/
-	system("exec rm -r ./.files/screen*");
+	if (!Screen::activeScreens.empty())
+		system("exec rm -r ./.files/screen*");
 	return 0;
 }

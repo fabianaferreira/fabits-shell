@@ -11,7 +11,7 @@ all: $(TARGET)
 $(TARGET): $(OBJFILES)
 	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES)
 
-	rm -r $(SCREENDIR)
+	rm -r $(SCREENDIR) || true
 	mkdir $(SCREENDIR)
 
 clean:

@@ -22,7 +22,7 @@
 
 
 /*Função que vai fazer o parser da string que vem da linha de comando, para pegar os argumentos inseridos*/
-int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
+int getArgumentsFromCommand (char* command, char** arguments, std::string* pathOutput)
 {
 	char* subString;
 	char inputCopy [BUFFER];
@@ -36,12 +36,13 @@ int getArgumentsFromCommand (char* command, char** arguments, char** pathOutput)
 	{
 		if (strcmp(subString, ">") == 0)
 			flagOutput = 1;
+
 		else
 		{
 			/*Se tiver a flag, a string vai receber o resultado do parser atual da strtok*/
 			if (flagOutput){
 				/*Mudando o valor da variavel pathOutput e atribuindo o valor na posicao de memoria da subString*/
-				*pathOutput = subString;
+				pathOutput->assign(subString);
 			}
 			else
 			{
@@ -119,19 +120,23 @@ void printInvalidCommand ()
 	printf(RESET_COLOR);
 }
 
-int guard(int ret, char * err) {
-  if (ret == -1) { perror(err); exit(1); }
+int checkError(int ret, std::string error) {
+  if (ret == -1) { perror(error.c_str()); exit(1); }
   return ret;
 }
 
-void write_all(int fd, char * bytes, size_t nbyte) {
+void writeAllToFifo(int fd, char * bytes, size_t nbyte) {
   ssize_t written = 0;
   while(written < nbyte) {
-    written += guard(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
+    written += checkError(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
   }
 }
 
-void write_str(int fd, char * chars) { write_all(fd, chars, strlen(chars)); }
+void write_str(int fd, std::string chars) {
+	char *string = new char[chars.size()+1];
+ 	strcpy(string,chars.c_str( ));
+	writeAllToFifo(fd, string, chars.length());
+}
 
 std::vector<std::string> parseString (std::string str, char delimiter) {
   std::vector<std::string> tokenVector;

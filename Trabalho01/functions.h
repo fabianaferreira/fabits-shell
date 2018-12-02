@@ -10,7 +10,7 @@
 #include <string>
 
 /*Declaracao da funcao para Tratamento de strings*/
-int getArgumentsFromCommand(char*, char**, char**);
+int getArgumentsFromCommand(char*, char**, std::string*);
 
 void freeArray(char**);
 
@@ -24,10 +24,10 @@ void printInvalidCommand ();
 
 std::string createScreenFilename(pid_t);
 
-int guard(int, char *);
+int checkError(int, std::string);
 
-void write_all(int, char *, size_t);
+void writeAllToFifo(int fd, char * bytes, size_t nbyte);
 
-void write_str(int, char *);
+void write_str(int, std::string);
 
 std::vector<std::string> parseString (std::string, char);
