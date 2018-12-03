@@ -110,7 +110,7 @@ bool Screen::activateScreen (std::string screenName)
   for (std::vector<Screen*>::iterator iter = Screen::activeScreens.begin();
        iter != Screen::activeScreens.end();
        iter++)
-  {		
+  {
     if ((*iter)->getScreenName().compare(screenName) == 0)
     {
 			/*
@@ -128,7 +128,28 @@ bool Screen::activateScreen (std::string screenName)
   return false;
 }
 
-void Screen::removeScreen (std::string screenName)
+bool Screen::removeScreen (std::string screenName)
 {
+	for (unsigned i = 0; i < Screen::activeScreens.size(); i++)
+	{
+		std::cout << Screen::activeScreens[i]->getScreenName() << std::endl;
+		if (Screen::activeScreens[i]->getScreenName().compare(screenName) == 0)
+		{
+			/*
+				Se estou tentando remover a ativa, entao a tela mais recente criada
+				sera a tela nova
+			*/
+			if (Screen::activeScreens[i]->getStatus())
+			{
+				unsigned tamanho = Screen::activeScreens.size();
+				Screen::activateScreen(Screen::activeScreens[tamanho - 2]->getScreenName());
+				Screen::activeScreen = Screen::activeScreens[tamanho - 2];
+			}
 
+			/*Feito isso, posso remover*/
+			Screen::activeScreens.erase(Screen::activeScreens.begin() + i);
+			return true;
+		}
+	}
+	return false;
 }

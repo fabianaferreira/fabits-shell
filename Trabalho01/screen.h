@@ -26,7 +26,7 @@ class Screen
     static void deactivateAllScreens ();
     static void killAllScreens ();
     static bool activateScreen (std::string);
-    static void removeScreen (std::string);
+    static bool removeScreen (std::string);
 
   private:
     pid_t pid;

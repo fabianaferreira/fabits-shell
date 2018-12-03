@@ -176,6 +176,14 @@ int main ()
           }
           else if (command.compare("remove") == 0 && !screenName.empty())
           {
+						bool removeu = Screen::removeScreen(screenName);
+						if (!removeu)
+						{
+							printf(RED_COLOR);
+							cout << "Nome de tela invalido. Nao foi possivel exclui-la" << endl;
+							printf(RESET_COLOR);
+							continue;
+						}
             cout << "remove screen " << screenName << endl;
           }
           else if (command.compare("switch") == 0 && !screenName.empty())
@@ -185,7 +193,7 @@ int main ()
 						if (!achou)
 						{
 							printf(RED_COLOR);
-							cout << "Nome de tela invalido." << endl;
+							cout << "Nome de tela invalido. Nao foi possivel fazer o switch." << endl;
 							printf(RESET_COLOR);
 							continue;
 						}
