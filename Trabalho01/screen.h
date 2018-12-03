@@ -15,6 +15,7 @@ class Screen
     void setPid(pid_t);
     std::string getFilename();
     void createScreenFilename();
+    std::string getScreenName();
 
     // Variaveis estaticas
     static std::vector <Screen*> activeScreens;
@@ -24,13 +25,14 @@ class Screen
     static void listScreens ();
     static void deactivateAllScreens ();
     static void killAllScreens ();
-    static void activateScreen (std::string);
+    static bool activateScreen (std::string);
     static void removeScreen (std::string);
 
   private:
     pid_t pid;
     bool active;
     std::string filename;
+    std::string screenName;
     static unsigned nextId;
     unsigned screenId;
 

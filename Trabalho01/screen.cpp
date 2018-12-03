@@ -2,18 +2,6 @@
 #include "consts.h"
 #include <iostream>
 #include <signal.h>
-// #include <string>
-
-
-/*Como fazer o nome ser opcional?*/
-// Screen::Screen (pid_t currentPid, bool status, std::string screenFilename)
-// {
-// 	pid = currentPid;
-// 	active = status;
-// 	filename = screenFilename;
-// 	screenId = nextId;
-// 	nextId++;
-// }
 
 unsigned Screen::nextId = 0;
 Screen* Screen::activeScreen = NULL;
@@ -25,6 +13,7 @@ Screen::Screen (bool status)
 	screenId = nextId;
 	nextId++;
 	filename = std::string(FIFO_PATH) + "screen_" + std::to_string(screenId);
+	screenName = "Screen_" + std::to_string(screenId);
   if (active)
   {
     /*Se nao for a primeira, vai desativar tudo*/
@@ -64,6 +53,11 @@ std::string Screen::getFilename()
 	return filename;
 }
 
+std::string Screen::getScreenName()
+{
+	return screenName;
+}
+
 void Screen::createScreenFilename()
 {
 	std::string screenFilename;
@@ -84,7 +78,10 @@ void Screen::listScreens()
        iter != Screen::activeScreens.end();
        iter++)
   {
-    std::cout << "Screen: " << (*iter)->getPid() << std::endl;
+    std::cout << "Name: " << (*iter)->getScreenName()
+							<< " | PID: " << (*iter)->getPid()
+							<< " | Active: " << (*iter)->getStatus()
+							<< std::endl;
   }
 }
 
@@ -108,24 +105,28 @@ void Screen::deactivateAllScreens ()
   }
 }
 
-void Screen::activateScreen (std::string screenName)
+bool Screen::activateScreen (std::string screenName)
 {
-  // bool achou = false;
-  // for (std::vector<Screen*>::iterator iter = Screen::activeScreens.begin();
-  //      iter != Screen::activeScreens.end();
-  //      iter++)
-  // {
-  //   if ((*iter)->getName().compare(screenName) == 0)
-  //   {
-  //     Screen::deactivateAllScreens()
-  //     (*iter)->setStatus(true);
-  //     break;
-  //   }
-  //
-  // }
-  // if (achou)
-  // for screen in Screen::
-  //Screen::deactivateAllScreens();
+  for (std::vector<Screen*>::iterator iter = Screen::activeScreens.begin();
+       iter != Screen::activeScreens.end();
+       iter++)
+  {
+		std::cout << (*iter)->getScreenName() << std::endl;
+    if ((*iter)->getScreenName().compare(screenName) == 0)
+    {
+			/*
+				Desativa todas as screens, ativa a com o nome desejado
+			  e altera o activeScreen para receber o ponteiro para a
+				screen ativa atual
+			*/
+      Screen::deactivateAllScreens();
+      (*iter)->setStatus(true);
+			Screen::activeScreen = (*iter);
+      return true;
+    }
+
+  }
+  return false;
 }
 
 void Screen::removeScreen (std::string screenName)

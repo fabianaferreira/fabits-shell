@@ -181,7 +181,14 @@ int main ()
           }
           else if (command.compare("switch") == 0 && !screenName.empty())
           {
-            cout << "switch to screen " << screenName << endl;
+						cout << "switch to screen " << screenName << endl;
+						bool achou = Screen::activateScreen(screenName);
+						if (!achou)
+						{
+							cout << "Nome de tela invalido" << endl;
+							continue;
+						}
+
           }
           else
           {
@@ -266,7 +273,7 @@ int main ()
 
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = Screen::getActiveScreen();
-
+					cout << activeScreen.getPid() << endl;
 					// Parent
 			    int pipe_write_fd = checkError(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);
