@@ -110,8 +110,7 @@ bool Screen::activateScreen (std::string screenName)
   for (std::vector<Screen*>::iterator iter = Screen::activeScreens.begin();
        iter != Screen::activeScreens.end();
        iter++)
-  {
-		std::cout << (*iter)->getScreenName() << std::endl;
+  {		
     if ((*iter)->getScreenName().compare(screenName) == 0)
     {
 			/*
