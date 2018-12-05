@@ -113,6 +113,7 @@ int main ()
 		signal(SIGUSR1, signal_handler);
 		if (fgets(userInput, BUFFER, stdin) != NULL)
 		{
+
 			/*Tratando a retirada do caracter de retorno que vem com a chamada da fgets*/
 			unsigned inputLength = strlen(userInput);
 			int flagCd = -1;
@@ -202,8 +203,9 @@ int main ()
 					printf(RED_COLOR);
 					cout << "Comando interrompido pelo usuario" << endl;
 					printf(RESET_COLOR);
-					continue;
 				}
+				stopThread = false;
+				continue;
 			}
 
 			else if (flagScreen == 0)
@@ -328,7 +330,7 @@ int main ()
 
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = Screen::getActiveScreen();
-					cout << "PID do processo atual: " << activeScreen.getPid() << endl;
+					// cout << "PID do processo atual: " << activeScreen.getPid() << endl;
 					// Parent
 			    int pipe_write_fd = checkError(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);
