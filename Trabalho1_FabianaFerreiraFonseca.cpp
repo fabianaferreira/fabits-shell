@@ -8,20 +8,22 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <iomanip>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <sys/wait.h>
-#include <vector>
-#include <fstream>
-#include <string>
 #include <sys/stat.h>
 #include <fcntl.h>
+
+#include <string>
+#include <iomanip>
+#include <vector>
+#include <fstream>
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <atomic>
+
 #include "screen.h"
 #include "functions.h"
 #include "consts.h"
@@ -58,7 +60,9 @@ void printCpuAndRamUsage ()
 	while (!stopThread){
 		cpuUsage = getCurrentUseOfCPU();
 		ramUsage = getCurrentUseOfRAM();
-		cout << "CPU usage (%): " << cpuUsage << setprecision(2) << " | RAM usage (KB): " << ramUsage << endl;
+		std::cout << std::fixed;
+    std::cout << std::setprecision(2);    
+		cout << "CPU usage (%): " << cpuUsage << std::setw(2) << " | RAM usage (KB): " << ramUsage << endl;
 		sleep_for(2s);
 	}
 	cout << endl;
