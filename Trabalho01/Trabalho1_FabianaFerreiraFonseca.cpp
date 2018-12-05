@@ -8,6 +8,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <iomanip>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -18,11 +19,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <iostream>
+#include <chrono>
+#include <thread>
+#include <atomic>
 #include "screen.h"
 #include "functions.h"
 #include "consts.h"
 
-
+using std::chrono::system_clock;
+using namespace std::this_thread;     // sleep_for, sleep_until
+using namespace std::chrono_literals; // ns, us, ms, s, h, etc.
 using namespace std;
 
 /*Variavel global que armazena o pid do processo que eu criei com o meu shell*/
@@ -30,6 +36,7 @@ pid_t child_pid;
 pid_t currentScreen_pid;
 
 Screen * currentScreen;
+std::atomic<bool> stopThread(false);
 
 /*Funcao que funciona como listener do sinal SIGUSR1, que matará
 o processo que está rodando no meu shell*/
@@ -40,6 +47,21 @@ void signal_handler(int sigNumber)
 		printf("Recebi um sinal de SIGUSR1. Terminando processo criado.\n");
 		kill(child_pid, SIGTERM);
 	}
+}
+
+/*Funcao que ira printar o uso de memoria e CPU continnuamente
+	ate keyboard interrupt*/
+void printCpuAndRamUsage ()
+{
+	double cpuUsage;
+	int ramUsage;
+	while (!stopThread){
+		cpuUsage = getCurrentUseOfCPU();
+		ramUsage = getCurrentUseOfRAM();
+		cout << "CPU usage (%): " << cpuUsage << setprecision(2) << " | RAM usage (KB): " << ramUsage << endl;
+		sleep_for(2s);
+	}
+	cout << endl;
 }
 
 int main ()
@@ -98,6 +120,7 @@ int main ()
 			int flagClear = -1;
 			int flagScreen = -1;
 			int flagExit = -1;
+			int flagMonitor = -1;
 
 			/*String auxiliar para pegar apenas o nome do comando e nao as suas opcoes
 			na hora de checar sua existencia*/
@@ -107,6 +130,7 @@ int main ()
 			flagMan = strcmp(userInput, MAN_COMMAND);
 			flagClear = strcmp(userInput, CLEAR_COMMAND);
 			flagExit = strcmp(userInput, EXIT_COMMAND);
+			flagMonitor = strcmp(userInput, MONITOR_COMMAND);
 
       string userInputString (userInput);
       flagScreen = (userInputString.find(SCREEN_COMMAND) == 0) ? 0 : 1;
@@ -118,7 +142,12 @@ int main ()
 				continue;
 			}
 			/*Testa todos os casos de comandos validos, se nao for, eh invalido e pede entrada de novo*/
-			if (strstr(commandList, inputCopy) == NULL && flagExit != 0 && flagMan != 0 && flagCd != 0 && flagClear != 0 && flagScreen != 0)
+			if (strstr(commandList, inputCopy) == NULL && flagExit != 0
+																								 && flagMan != 0
+																								 && flagCd != 0
+																								 && flagClear != 0
+																								 && flagScreen != 0
+																							 	 && flagMonitor != 0)
 			{
 				printInvalidCommand();
 				continue;
@@ -131,7 +160,7 @@ int main ()
 				userInput[inputLength - 1] = '\0';
 
 			/*Trata e faz o parser da string recebida na linha de comando caso não seja man nem clear nem screen*/
-			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0)
+			if (flagMan != 0 && flagClear != 0 && flagScreen != 0 && flagExit != 0 && flagMonitor != 0)
 				getArgumentsFromCommand(userInput, arguments, &pathOutput);
       /*Se for screen, usa outro parser*/
       else if (flagScreen == 0)
@@ -161,6 +190,22 @@ int main ()
 			else if (flagClear == 0)
 				system("clear");
 
+			else if (flagMonitor == 0)
+			{
+				/*Cria uma thread para rodar o print separado*/
+				std::thread t(printCpuAndRamUsage);
+				/*Observa se usuario entrou com qualquer input*/
+				if (getchar()) {
+					stopThread = true;
+					/*Isso aqui nao esta funcionando totalmente*/
+					t.join();
+					printf(RED_COLOR);
+					cout << "Comando interrompido pelo usuario" << endl;
+					printf(RESET_COLOR);
+					continue;
+				}
+			}
+
 			else if (flagScreen == 0)
 			{
         if (screenArguments.size() > 1)
@@ -184,7 +229,7 @@ int main ()
 							printf(RESET_COLOR);
 							continue;
 						}
-            cout << "remove screen " << screenName << endl;
+            // cout << "remove screen " << screenName << endl;
           }
           else if (command.compare("switch") == 0 && !screenName.empty())
           {
@@ -223,6 +268,7 @@ int main ()
 					    int pipe_read_fd = checkError(open(currentScreen->getFilename().c_str(), O_RDONLY), "Could not open pipe for reading");
 					    char buf[20];
 							char input[BUFFER];
+
 					    for (;;) {
 					      ssize_t num_read = checkError(read(pipe_read_fd, buf, sizeof(buf)), "Could not read from pipe");
 					      if (num_read == 0) {
@@ -282,6 +328,7 @@ int main ()
 
 					/*Pega a screen ativa atual*/
 					Screen activeScreen = Screen::getActiveScreen();
+					cout << "PID do processo atual: " << activeScreen.getPid() << endl;
 					// Parent
 			    int pipe_write_fd = checkError(open(activeScreen.getFilename().c_str(), O_WRONLY), "Could not open pipe for writing");
 			    write_str(pipe_write_fd, userInput);

@@ -86,6 +86,11 @@ void printUserGuide ()
   printf("4. Se especificado apenas o nome do arquivo, então será salvo no diretório atual\n");
   printf("5. O comando cd funciona com a limitação de nomes de diretórios que não tenham espaço,\n   por conta da lógica de parseamento de string\n");
   printf("6. O uso do signal SIGUSR1 é feito através de outra linha de comando e, quando executado,\n   encerra o processo filho que está executando\n");
+	printf("7. Comando screen usado para criar uma nova tela\n");
+	printf("7. screen remove <nome da tela> para remover\n");
+	printf("8. screen switch <nome da tela> para alterar tela ativa\n");
+	printf("9. screen list para listar telas existentes\n");
+	printf("10. Comando monitor para mostrar uso de CPU e memoria\n");
   printf("Por fim, os arquivos encontram-se no GitHub, através do seguinte link: github.com/FabianaFerreira/Sistemas-Operacionais\n");
   printf(RESET_COLOR);
 }
@@ -120,25 +125,29 @@ void printInvalidCommand ()
 	printf(RESET_COLOR);
 }
 
-int checkError(int ret, std::string error) {
+int checkError(int ret, std::string error)
+{
   if (ret == -1) { perror(error.c_str()); exit(1); }
   return ret;
 }
 
-void writeAllToFifo(int fd, char * bytes, size_t nbyte) {
+void writeAllToFifo(int fd, char * bytes, size_t nbyte)
+{
   ssize_t written = 0;
   while(written < nbyte) {
     written += checkError(write(fd, bytes+written, nbyte-written), "Could not write to pipe");
   }
 }
 
-void write_str(int fd, std::string chars) {
+void write_str(int fd, std::string chars)
+{
 	char *string = new char[chars.size()+1];
  	strcpy(string,chars.c_str( ));
 	writeAllToFifo(fd, string, chars.length());
 }
 
-std::vector<std::string> parseString (std::string str, char delimiter) {
+std::vector<std::string> parseString (std::string str, char delimiter)
+{
   std::vector<std::string> tokenVector;
   std::stringstream ss (str);
   std::string token;
@@ -146,4 +155,66 @@ std::vector<std::string> parseString (std::string str, char delimiter) {
       tokenVector.push_back (token);
   }
   return tokenVector;
+}
+
+int parseLine(char* line){
+    // This assumes that a digit will be found and the line ends in " Kb".
+    int i = strlen(line);
+    const char* p = line;
+    while (*p <'0' || *p > '9') p++;
+    line[i-3] = '\0';
+    i = atoi(p);
+    return i;
+}
+
+/*Funcao que le do arquivo que contem as informacoes de uso de CPU*/
+double getCurrentUseOfCPU ()
+{
+    double percent;
+    FILE* file;
+    unsigned long long totalUser, totalUserLow, totalSys, totalIdle, total;
+		static unsigned long long lastTotalUser, lastTotalUserLow, lastTotalSys, lastTotalIdle;
+
+    file = fopen(STATUS_CPU_PATH, "r");
+    fscanf(file, "cpu %llu %llu %llu %llu", &totalUser, &totalUserLow,
+        &totalSys, &totalIdle);
+    fclose(file);
+
+    if (totalUser < lastTotalUser || totalUserLow < lastTotalUserLow ||
+        totalSys < lastTotalSys || totalIdle < lastTotalIdle){
+        //Overflow detection. Just skip this value.
+        percent = -1.0;
+    }
+    else{
+        total = (totalUser - lastTotalUser) + (totalUserLow - lastTotalUserLow) +
+            (totalSys - lastTotalSys);
+        percent = total;
+        total += (totalIdle - lastTotalIdle);
+        percent /= total;
+        percent *= 100;
+    }
+
+    lastTotalUser = totalUser;
+    lastTotalUserLow = totalUserLow;
+    lastTotalSys = totalSys;
+    lastTotalIdle = totalIdle;
+
+    return percent;
+}
+
+/*Funcao que le do arquivo que contem as informacoes de uso de RAM*/
+int getCurrentUseOfRAM ()
+{
+    FILE* file = fopen("/proc/self/status", "r");
+    int result = -1;
+    char line[128];
+
+    while (fgets(line, 128, file) != NULL){
+        if (strncmp(line, "VmRSS:", 6) == 0){
+            result = parseLine(line);
+            break;
+        }
+    }
+    fclose(file);
+    return result;
 }

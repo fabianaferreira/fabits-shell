@@ -31,3 +31,7 @@ void writeAllToFifo(int fd, char * bytes, size_t nbyte);
 void write_str(int, std::string);
 
 std::vector<std::string> parseString (std::string, char);
+
+double getCurrentUseOfCPU ();
+
+int getCurrentUseOfRAM ();

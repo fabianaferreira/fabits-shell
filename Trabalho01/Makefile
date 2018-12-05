@@ -9,7 +9,7 @@ SCREENDIR = ./.files
 all: $(TARGET)
 
 $(TARGET): $(OBJFILES)
-	$(CC) $(CFLAGS) -o $(TARGET) $(OBJFILES)
+	$(CC) $(CFLAGS) -std=c++11 -o $(TARGET) $(OBJFILES) -pthread
 
 	rm -r $(SCREENDIR) || true
 	mkdir $(SCREENDIR)

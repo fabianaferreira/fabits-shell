@@ -17,4 +17,9 @@ Além disso, a implementação das diferentes telas se faz a partir de _fifos_ q
 * Excluir uma tela específica: `screen remove <nome tela>`
 * Alterar tela ativa: `screen switch <nome tela a ser ativada>`
 
+Referências utilizadas para funções da FIFO: https://jameshfisher.com/2017/02/21/mkfifo-c.html
+
 ## Extra: Desenvolvimento de um monitorador de tarefas básico
+Para essa implementação, utilizou-se a leitura de arquivos de sistema que contém as informações de uso de CPU e de RAM. Há uma _thread_ rodando no programa principal que faz esse _loop_, de forma que seja possível ler a interrupção através de uma tela, pelo usuário. Isso é necessário, pois a leitura através da `getchar()` é síncrona.
+
+Referências: https://stackoverflow.com/questions/63166/how-to-determine-cpu-and-memory-consumption-from-inside-a-process
